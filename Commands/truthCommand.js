@@ -1,5 +1,7 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { TRUTHQUESTIONS, sendMessage } from '../bot.js';
+import { questions, sendMessage } from '../bot.js';
+
+const truthQuestions = questions.truth
 
 const Aliases = ["t"]
 
@@ -29,9 +31,9 @@ function Command(args, message, channelSettings, prefix) {
         else {
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
-                index = Math.floor(Math.random() * TRUTHQUESTIONS[rating].length);
+                index = Math.floor(Math.random() * truthQuestions[rating].length);
             } while (questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, TRUTHQUESTIONS[rating][index]);
+            sendMessage(message.channel, truthQuestions[rating][index]);
         }
     }
     else {
@@ -41,9 +43,9 @@ function Command(args, message, channelSettings, prefix) {
         else {
             if (channelSettings[("truth " + args[0])]) {
                 do {
-                    index = Math.floor(Math.random() * TRUTHQUESTIONS[args[0]].length);
+                    index = Math.floor(Math.random() * truthQuestions[args[0]].length);
                 } while (questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, TRUTHQUESTIONS[args[0]][index]);
+                sendMessage(message.channel, truthQuestions[args[0]][index]);
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`${prefix}enable truth ${args[0]}\``);
@@ -94,9 +96,9 @@ function SlashCommand(interaction, channelSettings) {
     }
 
     do {
-        index = Math.floor(Math.random() * TRUTHQUESTIONS[rating].length);
+        index = Math.floor(Math.random() * truthQuestions[rating].length);
     } while (questionLog[guild.id]?.includes(index));
-    interaction.editReply(TRUTHQUESTIONS[rating][index])
+    interaction.editReply(truthQuestions[rating][index])
 
     if (!(guild.id in questionLog)) {
         questionLog[guild.id] = [];

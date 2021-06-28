@@ -1,6 +1,8 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { PARANOIAQUESTIONS, sendMessage } from '../bot.js';
+import { questions, sendMessage } from '../bot.js';
 import { checkUserParanoia, addUser } from './paranoiaData.js';
+
+const paranoiaQuestions = questions.paranoia
 
 const Aliases = ["p"]
 
@@ -40,7 +42,7 @@ async function Command(args, message, channelSettings, prefix) {
         else {
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
-                index = Math.floor(Math.random() * PARANOIAQUESTIONS[rating].length);
+                index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
             } while (questionLog[guild.id]?.includes(index));
             sendQuestionToUser(mentionedUsers.first(), rating, index, message);
         }
@@ -59,7 +61,7 @@ async function Command(args, message, channelSettings, prefix) {
         else {
             if (channelSettings[("paranoia " + rating)]) {
                 do {
-                    index = Math.floor(Math.random() * PARANOIAQUESTIONS[rating].length);
+                    index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
                 } while (questionLog[guild.id]?.includes(index));
                 sendQuestionToUser(mentionedUsers.first(), rating, index, message)
             }
@@ -122,11 +124,11 @@ async function SlashCommand(interaction, channelSettings) {
     }
 
     do {
-        index = Math.floor(Math.random() * PARANOIAQUESTIONS[rating].length);
+        index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
     } while (questionLog[guild.id]?.includes(index));
-    user.send(`Question from ${interaction.user.username} in ${guild.name}: \n${PARANOIAQUESTIONS[rating][index]}\nReply with \`/ans\``)
+    user.send(`Question from ${interaction.user.username} in ${guild.name}: \n${paranoiaQuestions[rating][index]}\nReply with \`/ans\``)
         .then(() => {
-            addUser(user.id, guild.id, interaction.channel.id, PARANOIAQUESTIONS[rating][index])
+            addUser(user.id, guild.id, interaction.channel.id, paranoiaQuestions[rating][index])
             interaction.editReply("Paranoia question sent")
         })
         .catch((err) => {
@@ -170,9 +172,9 @@ const Meta = {
 }
 
 function sendQuestionToUser(user, rating, index, message) {
-    user.send(`Question from ${message.author.username} in ${message.guild.name}: \n${PARANOIAQUESTIONS[rating][index]}\nReply with \`+ans [answer]\`.`)
+    user.send(`Question from ${message.author.username} in ${message.guild.name}: \n${paranoiaQuestions[rating][index]}\nReply with \`+ans [answer]\`.`)
         .then(() => {
-            addUser(user.id, message.guild.id, message.channel.id, PARANOIAQUESTIONS[rating][index])
+            addUser(user.id, message.guild.id, message.channel.id, paranoiaQuestions[rating][index])
             sendMessage(message.channel, "Paranoia question sent")
         })
         .catch((err) => {

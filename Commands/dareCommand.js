@@ -1,5 +1,7 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { DAREQUESTIONS, sendMessage } from '../bot.js';
+import { questions, sendMessage } from '../bot.js';
+
+const dareQuestions = questions.dare
 
 const Aliases = ["d"]
 
@@ -41,9 +43,9 @@ function Command(args, message, channelSettings, prefix) {
         else {
             let category = categories[Math.floor(Math.random() * categories.length)];
             do {
-                index = Math.floor(Math.random() * DAREQUESTIONS[category].length);
+                index = Math.floor(Math.random() * dareQuestions[category].length);
             } while (questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, DAREQUESTIONS[category][index]);
+            sendMessage(message.channel, dareQuestions[category][index]);
         }
     }
     else if (args.length === 1) {
@@ -63,9 +65,9 @@ function Command(args, message, channelSettings, prefix) {
                     if (types.length > 0) {
                         let type = types[Math.floor(Math.random() * types.length)];
                         do {
-                            index = Math.floor(Math.random() * DAREQUESTIONS[(args[0] + "_" + type)].length);
+                            index = Math.floor(Math.random() * dareQuestions[(args[0] + "_" + type)].length);
                         } while (questionLog[guild.id]?.includes(index));
-                        sendMessage(message.channel, DAREQUESTIONS[(args[0] + "_" + type)][index]);
+                        sendMessage(message.channel, dareQuestions[(args[0] + "_" + type)][index]);
                     }
                     else {
                         sendMessage(message.channel, `Dare questions are disabled here. To enable them, use \`${prefix}enable dare\``);
@@ -89,9 +91,9 @@ function Command(args, message, channelSettings, prefix) {
                     if (ratings.length > 0) {
                         let rating = ratings[Math.floor(Math.random() * ratings.length)];
                         do {
-                            index = Math.floor(Math.random() * DAREQUESTIONS[(rating + "_" + args[0])].length);
+                            index = Math.floor(Math.random() * dareQuestions[(rating + "_" + args[0])].length);
                         } while (questionLog[guild.id]?.includes(index));
-                        sendMessage(message.channel, DAREQUESTIONS[(rating + "_" + args[0])][index]);
+                        sendMessage(message.channel, dareQuestions[(rating + "_" + args[0])][index]);
                     }
                     else {
                         sendMessage(message.channel, `Dare questions are disabled here. To enable them, use \`${prefix}enable dare\``);
@@ -134,9 +136,9 @@ function Command(args, message, channelSettings, prefix) {
             }
             else {
                 do {
-                    index = Math.floor(Math.random() * DAREQUESTIONS[(rating + "_" + type)].length);
+                    index = Math.floor(Math.random() * dareQuestions[(rating + "_" + type)].length);
                 } while (questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, DAREQUESTIONS[(rating + "_" + type)][index]);
+                sendMessage(message.channel, dareQuestions[(rating + "_" + type)][index]);
             }
         }
     }
@@ -209,9 +211,9 @@ function SlashCommand(interaction, channelSettings) {
     }
 
     do {
-        index = Math.floor(Math.random() * DAREQUESTIONS[rating + "_" + type].length);
+        index = Math.floor(Math.random() * dareQuestions[rating + "_" + type].length);
     } while (questionLog[guild.id]?.includes(index));
-    interaction.editReply(DAREQUESTIONS[rating + "_" + type][index])
+    interaction.editReply(dareQuestions[rating + "_" + type][index])
     
     if (!(guild.id in questionLog)) {
         questionLog[guild.id] = [];

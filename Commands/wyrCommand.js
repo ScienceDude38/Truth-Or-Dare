@@ -1,5 +1,8 @@
 export { Command, SlashCommand, Meta };
-import { WYRQUESTIONS, sendMessage } from '../bot.js';
+import { questions, sendMessage } from '../bot.js';
+
+const wyrQuestions = questions.wyr
+
 var questionLog = {};
 function Command(args, message, channelSettings, prefix) {
     var index;
@@ -25,9 +28,9 @@ function Command(args, message, channelSettings, prefix) {
         else {
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
-                index = Math.floor(Math.random() * WYRQUESTIONS[rating].length);
+                index = Math.floor(Math.random() * wyrQuestions[rating].length);
             } while (questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, WYRQUESTIONS[rating][index]);
+            sendMessage(message.channel, wyrQuestions[rating][index]);
         }
     }
     else {
@@ -37,9 +40,9 @@ function Command(args, message, channelSettings, prefix) {
         else {
             if (channelSettings[("wyr " + args[0])]) {
                 do {
-                    index = Math.floor(Math.random() * WYRQUESTIONS[args[0]].length);
+                    index = Math.floor(Math.random() * wyrQuestions[args[0]].length);
                 } while (questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, WYRQUESTIONS[args[0]][index]);
+                sendMessage(message.channel, wyrQuestions[args[0]][index]);
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`+enable wyr ${args[0]}\``);
@@ -90,9 +93,9 @@ function SlashCommand(interaction, channelSettings) {
     }
 
     do {
-        index = Math.floor(Math.random() * WYRQUESTIONS[rating].length);
+        index = Math.floor(Math.random() * wyrQuestions[rating].length);
     } while (questionLog[guild.id]?.includes(index));
-    interaction.editReply(WYRQUESTIONS[rating][index])
+    interaction.editReply(wyrQuestions[rating][index])
 
     if (!(guild.id in questionLog)) {
         questionLog[guild.id] = [];

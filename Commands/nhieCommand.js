@@ -1,5 +1,8 @@
 export { Command, SlashCommand, Meta };
-import { NHIEQUESTIONS, sendMessage } from '../bot.js';
+import { questions, sendMessage } from '../bot.js';
+
+const nhieQuestions = questions.nhie
+
 var questionLog = {};
 function Command(args, message, channelSettings, prefix) {
     var index;
@@ -25,9 +28,9 @@ function Command(args, message, channelSettings, prefix) {
         else {
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
-                index = Math.floor(Math.random() * NHIEQUESTIONS[rating].length);
+                index = Math.floor(Math.random() * nhieQuestions[rating].length);
             } while (questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, NHIEQUESTIONS[rating][index]);
+            sendMessage(message.channel, nhieQuestions[rating][index]);
         }
     }
     else {
@@ -37,9 +40,9 @@ function Command(args, message, channelSettings, prefix) {
         else {
             if (channelSettings[("nhie " + args[0])]) {
                 do {
-                    index = Math.floor(Math.random() * NHIEQUESTIONS[args[0]].length);
+                    index = Math.floor(Math.random() * nhieQuestions[args[0]].length);
                 } while (questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, NHIEQUESTIONS[args[0]][index]);
+                sendMessage(message.channel, nhieQuestions[args[0]][index]);
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`+enable nhie ${args[0]}\``);
@@ -90,9 +93,9 @@ function SlashCommand(interaction, channelSettings) {
     }
 
     do {
-        index = Math.floor(Math.random() * NHIEQUESTIONS[rating].length);
+        index = Math.floor(Math.random() * nhieQuestions[rating].length);
     } while (questionLog[guild.id]?.includes(index));
-    interaction.editReply(NHIEQUESTIONS[rating][index])
+    interaction.editReply(nhieQuestions[rating][index])
 
     if (!(guild.id in questionLog)) {
         questionLog[guild.id] = [];

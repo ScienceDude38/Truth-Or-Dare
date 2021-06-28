@@ -22,37 +22,7 @@ console.log = function (input) {
     let date = new Date();
     originalLog(`${(date.getHours() >= 10) ? date.getHours() : "0" + date.getHours()}:${(date.getMinutes() >= 10) ? date.getMinutes() : "0" + date.getMinutes()}:${(date.getSeconds() >= 10) ? date.getSeconds() : "0" + date.getSeconds()}    ${input}`);
 };
-function getQuestions(text) {
-    let lines = text.split(/\r?\n/);
-    let categoryRegex = /<--(?!-)([^#<>]+)(?<!-)-->/;
-    let currentCategory = undefined;
-    let returnValue = {};
-    for (let line of lines) {
-        let categoryMatch = line.match(categoryRegex);
-        if (categoryMatch !== null) {
-            currentCategory = categoryMatch[1];
-            if (!Array.isArray(returnValue[currentCategory])) {
-                returnValue[currentCategory] = [];
-            }
-        }
-        else if (line[0] === "#" && line[1] === " ") {
-            if (currentCategory !== undefined) {
-                returnValue[currentCategory].push(line.slice(2));
-            }
-        }
-    }
-    return returnValue;
-}
-const TRUTHQUESTIONS = getQuestions(fs.readFileSync('./Questions/truthQuestions.quf', { "encoding": 'utf-8' }));
-const DAREQUESTIONS = getQuestions(fs.readFileSync('./Questions/dareQuestions.quf', { "encoding": 'utf-8' }));
-const WYRQUESTIONS = getQuestions(fs.readFileSync('./Questions/wyrQuestions.quf', { "encoding": 'utf-8' }));
-const NHIEQUESTIONS = getQuestions(fs.readFileSync('./Questions/nhieQuestions.quf', { "encoding": 'utf-8' }));
-const PARANOIAQUESTIONS = getQuestions(fs.readFileSync('./Questions/paranoiaQuestions.quf', { "encoding": 'utf-8' }));
-client.numberTruths = TRUTHQUESTIONS.pg.length + TRUTHQUESTIONS.pg13.length + TRUTHQUESTIONS.r.length;
-client.numberDares = DAREQUESTIONS.pg_d.length + DAREQUESTIONS.pg13_d.length + DAREQUESTIONS.r_d.length + DAREQUESTIONS.pg_irl.length + DAREQUESTIONS.pg13_irl.length + DAREQUESTIONS.r_irl.length;
-client.numberWyr = WYRQUESTIONS.pg.length + WYRQUESTIONS.pg13.length + WYRQUESTIONS.r.length;
-client.numberNhie = NHIEQUESTIONS.pg.length + NHIEQUESTIONS.pg13.length + NHIEQUESTIONS.r.length;
-client.numberParanoias = PARANOIAQUESTIONS.pg.length + PARANOIAQUESTIONS.pg13.length + PARANOIAQUESTIONS.r.length;
+
 client.commands = new Discord.Collection();
 client.slashCommands = new Discord.Collection();
 const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
@@ -76,10 +46,25 @@ setInterval(() => {
     }
 }, 600000);
 
+const questions = {}
+
 import { MongoHandler } from './mongodbFunctions.js';
 const handler = new MongoHandler()
-handler.init().then(() => {
+handler.init().then(async () => {
     console.log("MongoDB connected")
+
+    questions.truth = await handler.getQuestions("truth")
+    questions.dare = await handler.getQuestions("dare")
+    questions.wyr = await handler.getQuestions("wyr")
+    questions.nhie = await handler.getQuestions("nhie")
+    questions.paranoia = await handler.getQuestions("paranoia")
+
+    client.numberTruths = questions.truth.pg.length + questions.truth.pg13.length + questions.truth.r.length
+    client.numberDares = questions.dare.pg_d.length + questions.dare.pg13_d.length + questions.dare.r_d.length + questions.dare.pg_irl.length + questions.dare.pg13_irl.length + questions.dare.r_irl.length
+    client.numberWyr = questions.wyr.pg.length + questions.wyr.pg13.length + questions.wyr.r.length
+    client.numberNhie = questions.nhie.pg.length + questions.nhie.pg13.length + questions.nhie.r.length
+    client.numberParanoias = questions.paranoia.pg.length + questions.paranoia.pg13.length + questions.paranoia.r.length
+
     client.login(process.env.TOKEN)
 })
 
@@ -89,11 +74,7 @@ export {
     Discord,
     client,
     fs,
-    TRUTHQUESTIONS,
-    DAREQUESTIONS,
-    WYRQUESTIONS,
-    NHIEQUESTIONS,
-    PARANOIAQUESTIONS,
+    questions,
     sendMessage,
     handler,
     commandIDs,
@@ -229,7 +210,7 @@ client.on('message', async (message) => {
             }
 
             processCommand(message, channelSettings, prefix, false);
-            
+
             if (Math.random() < 0.007) {
                 let linkEmbed = new Discord.MessageEmbed()
                     .setColor('#e91e62')
@@ -261,47 +242,10 @@ async function processCommand(message, channelSettings, prefix, dm) {
                 sendMessage(message.channel, "You're sending commands too fast, wait a few seconds before trying another");
             }
             else if (!channelSettings["muted?"]) {
-                if (primaryCommand === 'random') {
-                    let categories = [];
-                    if (channelSettings["truth pg"] || channelSettings["truth pg13"] || channelSettings["truth r"]) {
-                        categories.push("truth");
-                    }
-                    if ((channelSettings["dare pg"] || channelSettings["dare pg13"] || channelSettings["dare r"]) && (channelSettings["dare d"] || channelSettings["dare irl"])) {
-                        categories.push("dare");
-                    }
-                    if (channelSettings["wyr pg"] || channelSettings["wyr pg13"] || channelSettings["wyr r"]) {
-                        categories.push("wyr");
-                    }
-                    if (channelSettings["nhie pg"] || channelSettings["nhie pg13"] || channelSettings["nhie r"]) {
-                        categories.push("nhie");
-                    }
-                    let command = Math.floor(Math.random() * categories.length)
-                    client.commands.get(command)(args, message, channelSettings)
-                } else if (primaryCommand === 'tod') {
-                    let truthEnabled = channelSettings["truth pg"] || channelSettings["truth pg13"] || channelSettings["truth r"];
-                    let dareEnabled = (channelSettings["dare pg"] || channelSettings["dare pg13"] || channelSettings["dare r"]) && (channelSettings["dare irl"] || channelSettings["dare d"]);
-                    if (truthEnabled && dareEnabled) {
-                        (Math.random() < 0.5)
-                        ? client.commands.get('truth')(args, message, channelSettings)
-                        : client.commands.get('dare')(args, message, channelSettings);
-                    }
-                    else if (truthEnabled) {
-                        client.commands.get('truth')(args, message, channelSettings);
-                    }
-                    else if (dareEnabled) {
-                        client.commands.get('dare')(args, message, channelSettings);
-                    }
-                    else {
-                        sendMessage(message.channel, "Truths and dares are disabled here");
-                    }
-                } else if (primaryCommand === 'shard') {
-                    sendMessage(message.channel, JSON.stringify(client.shard.ids));
-                } else if (primaryCommand === 'shards') {
-                    sendMessage(message.channel, JSON.stringify(await client.shard.ids));
-                } else if (client.commands.has(primaryCommand)) {
+                if (client.commands.has(primaryCommand)) {
                     client.commands.get(primaryCommand)(args, message, channelSettings, prefix);
+                    channelTime[message.channel.id] = Date.now();
                 }
-                channelTime[message.channel.id] = Date.now();
             } else if (primaryCommand === "unmute" || primaryCommand === "um") {
                 client.commands.get(primaryCommand)(args, message, channelSettings, prefix)
             }

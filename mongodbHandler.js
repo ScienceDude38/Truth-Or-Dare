@@ -32,7 +32,7 @@ async function initiateMongo() {
     try {
         mongoClient.connect();
         db = mongoClient.db("todBeta");
-        ["prefixes", "channelSettings", "serverChannels", "paranoiaData", "statistics", "serverCounts"].forEach(coll => {
+        ["prefixes", "channelSettings", "serverChannels", "paranoiaData", "statistics", "serverCounts", "questions"].forEach(coll => {
             collections[coll] = db.collection(coll)
         })
         return true;
@@ -147,6 +147,10 @@ const functions = {
     setStatistics: async (shardID, statistics) => {
         let collection = collections.statistics
         return collection.findOneAndReplace({ "shardID": shardID }, { "shardID": shardID, "statistics": statistics }, {"upsert": true})
+    },
+    getQuestions: async (name) => {
+        let collection = collections.questions
+        return collection.findOne({ name }).data
     }
 }
 

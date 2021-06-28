@@ -277,6 +277,22 @@ class MongoHandler {
             })
         })
     }
+
+    async getQuestions(name) {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+    
+        this.handler.emit('message', {
+            operation: "getQuestions",
+            args: [name],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data) => {
+                res(data)
+            })
+        })
+    }
 }
 
 export {MongoHandler}
