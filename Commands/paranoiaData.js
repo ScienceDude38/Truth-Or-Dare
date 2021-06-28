@@ -4,7 +4,7 @@ async function checkUserParanoia(user, guild) {
     if (user === undefined) {
         return false;
     }
-    let userData = await handler.query("getParanoiaData", user);
+    let userData = await handler.getParanoiaData(user);
     if (userData) {
         return userData.some((a) => a.guild === guild);
     }
@@ -13,19 +13,19 @@ async function checkUserParanoia(user, guild) {
     }
 }
 async function addUser(user, guild, channel, question) {
-    let userData = await handler.query("getParanoiaData", user);
+    let userData = await handler.getParanoiaData(user);
     if (userData) {
         userData.push(new ParanoiaQuestion(user, guild, channel, question));
-        handler.query("setParanoiaData", user, userData);
+        handler.setParanoiaData(user, userData);
     }
     else {
         let newUserData = [];
         newUserData.push(new ParanoiaQuestion(user, guild, channel, question));
-        handler.query("setParanoiaData", user, newUserData);
+        handler.setParanoiaData(user, newUserData);
     }
 }
 async function checkUserAns(user) {
-    let userData = await handler.query("getParanoiaData", user);
+    let userData = await handler.getParanoiaData(user);
     if (Array.isArray(userData)) {
         if (userData[0] === undefined || !userData[0].hasOwnProperty("time")) {
         }
@@ -34,7 +34,7 @@ async function checkUserAns(user) {
                 userData.shift();
             }
             if (userData[0]) {
-                handler.query("setParanoiaData", user, userData);
+                handler.setParanoiaData(user, userData);
                 return userData[0];
             }
             else {
@@ -48,13 +48,13 @@ async function checkUserAns(user) {
     }
 }
 async function removeUser(user) {
-    let userData = await handler.query("getParanoiaData", user);
+    let userData = await handler.getParanoiaData(user);
     userData.shift();
     if (userData.length === 0) {
-        handler.query("deleteParanoiaData", user);
+        handler.deleteParanoiaData(user);
     }
     else {
-        handler.query("setParanoiaData", user, userData);
+        handler.setParanoiaData(user, userData);
     }
 }
 class ParanoiaQuestion {

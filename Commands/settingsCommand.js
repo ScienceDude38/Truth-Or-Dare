@@ -45,8 +45,8 @@ async function SlashCommand(interaction, channelSettings) {
             return
         }
 
-        let channelID = options.get('channel').channel.channelID
-        let cs = await handler.query('getChannelSettings', channelID)
+        let channelID = options.get('channel').channel.id
+        let cs = await handler.getChannelSettings(channelID)
 
         var settingsEmbed = new Discord.MessageEmbed()
             .setColor('#e73c3b')

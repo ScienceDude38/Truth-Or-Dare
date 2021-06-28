@@ -1,10 +1,9 @@
 export { Command, SlashCommand, Meta, Aliases };
 import { sendMessage, handler } from '../bot.js';
-import { settingsChange } from './settingsChange.js';
 
 const Aliases = ["en"]
 
-async function Command(args, message, guildSettings, serverPrefix) {
+async function Command(args, message, channelSettings) {
     let guild = message.guild
     let member = await guild.members.fetch(message.author.id, false)
     let roles = await Promise.all(member.roles.cache.map(role => guild.roles.fetch(role.id, false)))
@@ -32,7 +31,7 @@ async function Command(args, message, guildSettings, serverPrefix) {
                 for (let command of commands) {
                     if (categories.length !== 0) {
                         for (let category of categories) {
-                            if (command === "dare" || (category !== "irl" && category !== "irl")) {
+                            if (command === "dare" || (category !== "d" && category !== "irl")) {
                                 toBeEnabled.push(command + " " + category);
                             }
                         }
@@ -61,7 +60,21 @@ async function Command(args, message, guildSettings, serverPrefix) {
                 sendMessage(message.channel, "Could not find any valid commands or categories to enable. Double check that any commands or categories specified are spelled correctly and are not mutually exclusive (like `truth` and `irl`).");
             }
             else {
-                await settingsChange(message, guildSettings, toBeEnabled, args.includes("server"), true);
+                if (args.includes("server")) {
+                    let serverChannels = await handler.getServerChannels(guild.id)
+                    for (let c of serverChannels) {
+                        let cs = await handler.getChannelSettings(c)
+                        for (let setting of toBeDisabled) {
+                            cs[setting] = false
+                        }
+                        await handler.setChannelSettings(c, cs)
+                    }
+                } else {
+                    for (let setting of toBeEnabled) {
+                        channelSettings[setting] = false
+                    }
+                    await handler.setChannelSettings(message.channel.id, channelSettings)
+                }
                 let enabledString = joinToString(toBeEnabled);
                 sendMessage(message.channel, `${enabledString} enabled ${(args.includes("server")) ? "serverwide" : "in this channel"}`);
             }
@@ -92,13 +105,13 @@ async function SlashCommand(interaction, channelSettings) {
     }
 
     if (serverwide) {
-        let serverChannels = await handler.query("getServerChannels", guild)
+        let serverChannels = await handler.getServerChannels(guild.id)
         for (let c of serverChannels) {
-            let cs = await handler.query("getChannelSettings", c)
+            let cs = await handler.getChannelSettings(c)
             for (let setting of toBeEnabled) {
                 cs[setting] = true
             }
-            handler.query("setChannelSettings", c, cs)
+            await handler.setChannelSettings(c, cs)
         }
 
         interaction.editReply(joinToString(toBeEnabled) + " enabled serverwide")
@@ -109,18 +122,18 @@ async function SlashCommand(interaction, channelSettings) {
         }
 
         let channelID = options.get('channel').channel.id
-        let cs = await handler.query("getChannelSettings", channelID)
+        let cs = await handler.getChannelSettings(channelID)
         for (let setting of toBeEnabled) {
             cs[setting] = true
         }
-        handler.query("setChannelSettings", channelID, cs)
+        await handler.setChannelSettings(channelID, cs)
 
         interaction.editReply(`${joinToString(toBeEnabled)} enabled in <#${channelID}>`)
     } else {
         for (let setting of toBeEnabled) {
             channelSettings[setting] = true
         }
-        handler.query("setChannelSettings", channel.id)
+        await handler.setChannelSettings(channel.id, channelSettings)
 
         interaction.editReply(`${joinToString(toBeEnabled)} enabled in the current channel`)
     }

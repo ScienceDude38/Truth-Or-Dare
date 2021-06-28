@@ -14,8 +14,8 @@ const client = new Discord.Client({
     allowedMentions: { parse:['users'], repliedUser: true },
     intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"]
 });
-/* const topgg = require('@top-gg/sdk');
-const topggAPI = new topgg.Api(process.env.TOPGG); */
+const topgg = require('@top-gg/sdk');
+const topggAPI = new topgg.Api(process.env.TOPGG);
 const fs = require('fs');
 const originalLog = console.log;
 console.log = function (input) {
@@ -96,7 +96,8 @@ export {
     PARANOIAQUESTIONS,
     sendMessage,
     handler,
-    commandIDs
+    commandIDs,
+    topggAPI
 };
 
 fs.readdirSync('./Commands/').forEach(async file => {
@@ -119,7 +120,6 @@ client.on('rateLimit', (info) => {
     console.log(`Rate limit hit, Time: ${info.timeout ? info.timeout : 'Unknown timeout '}, Path: ${info.path || 'Unknown path'}, Route: ${info.route || 'Unknown route'}`);
 });
 client.on('guildCreate', async (guild) => {
-    if (client.guilds.cache.has(guild.id)) return;
     console.log(`Server joined: ${guild.name} (${guild.id})`);
 
     let serverChannels = []
@@ -128,64 +128,76 @@ client.on('guildCreate', async (guild) => {
         .forEach(c => {
             serverChannels.push(c.id)
             if (c.nsfw) { 
-                handler.query("setChannelSettings", c.id, rRatedSettings)
+                handler.setChannelSettings(c.id, rRatedSettings)
             } else {
-                handler.query("setChannelSettings", c.id, defaultSettings)
+                handler.setChannelSettings(c.id, defaultSettings)
             }
         });
-    handler.query("setServerChannels", guild.id, serverChannels);
+        handler.setServerChannels(guild.id, serverChannels);
 
-    handler.query("updateServerCount", client.shard.ids[0], client.guilds.cache.size)
+    handler.setServerCount(client.shard.ids[0], client.guilds.cache.size)
     client.statistics.serversJoined++;
     /* await topggAPI.postStats({
         serverCount: client.guilds.cache.size,
         shardId: client.shard.ids[0],
         shardCount: client.options.shardCount
     }); */
-    handler.query("setStatistics", client.shard.ids[0], client.statistics)
+    handler.setStatistics(client.shard.ids[0], client.statistics)
 
     console.log("Server count updated for shard " + client.shard.ids[0] + ": " + client.guilds.cache.size);
 
-    handler.query("setPrefix", guild.id, '+');
+    handler.setPrefix(guild.id, '+');
 });
 client.on('guildDelete', async (guild) => {
     console.log(`Server left: ${guild.name} (${guild.id})`);
 
-    handler.query("updateServerCount", client.shard.ids[0], client.guilds.cache.size)
+    handler.setServerCount(client.shard.ids[0], client.guilds.cache.size)
     client.statistics.serversLeft++;
     /* await topggAPI.postStats({
         serverCount: client.guilds.cache.size,
         shardId: client.shard.ids[0],
         shardCount: client.options.shardCount
     }); */
-    handler.query("setStatistics", client.shard.ids[0], client.statistics)
+    handler.setStatistics(client.shard.ids[0], client.statistics)
 
-    let serverChannels = await handler.query("getServerChannels", guild.id)
+    let serverChannels = await handler.getServerChannels(guild.id)
     serverChannels.forEach(id => {
-        handler.query("deleteChannelSettings", id)
+        handler.deleteChannelSettings(id)
     })
     
     console.log("Server count updated for shard " + client.shard.ids[0] + ": " + client.guilds.cache.size);
     
-    handler.query("deletePrefix", guild.id);
+    handler.deletePrefix(guild.id);
 });
 
 client.on('channelDelete', async (channel) => {
     if (channel?.type === "text") {
-        let serverChannels = await handler.query("getServerChannels", channel.guild.id)
-        handler.query("setServerChannels", serverChannels.filter(c => c !== channel.id))
-        handler.query("deleteChannelSettings", channel.id)
+        let serverChannels = await handler.getServerChannels(channel.guild.id)
+        handler.setServerChannels(serverChannels.filter(c => c !== channel.id))
+        handler.deleteChannelSettings(channel.id)
     }
 });
 
 client.on('interaction', async (interaction) => {
+    const { channel, guild, commandName } = interaction
     if (!interaction.isCommand()) return;
-    let channelSettings = interaction.channel?.type === "dm" ?
-        await handler.query("getChannelSettings", interaction.channel.id) :
+    let channelSettings = channel?.type === "text" ?
+        await handler.getChannelSettings(channel.id) :
         allEnabledSettings
-    if (client.slashCommands.has(interaction.commandName)) {
+
+    if (!channelSettings && channel?.type === "text") {
+        console.log("Unindexed channel");
+
+        channelSettings = channel.nsfw ? rRatedSettings : defaultSettings
+
+        let serverChannels = [...handler.getServerChannels(guild.id), channel.id]
+        handler.setChannelSettings(channel.id, channelSettings);
+        handler.setServerChannels(guild.id, serverChannels)
+    }
+
+    if (client.slashCommands.has(commandName)) {
         interaction.defer();
-        client.slashCommands.get(interaction.commandName)(interaction, channelSettings);
+        client.slashCommands.get(commandName)(interaction, channelSettings);
     }
 });
 
@@ -196,21 +208,28 @@ client.on('message', async (message) => {
 
     const { guild, channel } = message;
     if (guild) {
-        let prefix = await handler.query("getPrefix", guild.id);
-        if (prefix === undefined || prefix === null) {
+        let prefix = await handler.getPrefix(guild.id);
+
+        if (!prefix) {
             prefix = '+'
-            handler.query("setPrefix", guild.id, prefix)
+            handler.setPrefix(guild.id, prefix)
         }
-        if (message.content.startsWith(prefix || '+')) {
-            let channelSettings = await handler.query("getChannelSettings", channel.id);
-            if (channelSettings === undefined || channelSettings === null) {
+
+        if (message.content.startsWith(prefix)) {
+            let channelSettings = await handler.getChannelSettings(channel.id);
+
+            if (!channelSettings) {
                 console.log("Unindexed channel");
 
                 channelSettings = channel.nsfw ? rRatedSettings : defaultSettings
 
-                handler.query("setChannelSettings", channel.id, channelSettings);
+                let serverChannels = [...handler.getServerChannels(guild.id), channel.id]
+                handler.setChannelSettings(channel.id, channelSettings);
+                handler.setServerChannels(guild.id, serverChannels)
             }
-            processCommand(message, channelSettings, prefix || '+', false);
+
+            processCommand(message, channelSettings, prefix, false);
+            
             if (Math.random() < 0.007) {
                 let linkEmbed = new Discord.MessageEmbed()
                     .setColor('#e91e62')
@@ -283,6 +302,8 @@ async function processCommand(message, channelSettings, prefix, dm) {
                     client.commands.get(primaryCommand)(args, message, channelSettings, prefix);
                 }
                 channelTime[message.channel.id] = Date.now();
+            } else if (primaryCommand === "unmute" || primaryCommand === "um") {
+                client.commands.get(primaryCommand)(args, message, channelSettings, prefix)
             }
         }
     }

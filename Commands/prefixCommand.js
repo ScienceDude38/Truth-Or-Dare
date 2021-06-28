@@ -13,12 +13,12 @@ async function Command(args, message, channelSettings, prefix) {
         sendMessage(message.channel, "Your current prefix is " + prefix);
     }
     else if (args.length === 1) {
-        handler.query("setPrefix", guild.id, args[0]);
+        handler.setPrefix(guild.id, args[0]);
         sendMessage(message.channel, `Prefix set to ${args[0]} followed by no space. To put a space between your prefix and the command, use ${args[0]}prefix [new prefix] s`);
     }
     else if (args.length === 2) {
         if (args[1] === "s") {
-            handler.query("setPrefix", guild.id, args[0] + " ");
+            handler.setPrefix(guild.id, args[0] + " ");
             sendMessage(message.channel, `Prefix set to ${args[0]} followed by a space.`);
         }
         else {

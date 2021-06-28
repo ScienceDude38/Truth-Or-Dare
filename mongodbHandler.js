@@ -12,7 +12,6 @@ ipc.config.silent = true
 ipc.serve(
     () => {
         ipc.server.on('message', async (data, socket) => {
-            ipc.log('Message received: ', data)
             let {operation, args, operationID} = data
 
             if (operation in functions) {
@@ -124,7 +123,7 @@ const functions = {
         })
         return count
     },
-    updateServerCount: async (manager, count) => {
+    setServerCount: async (manager, count) => {
         let collection = collections.serverCounts
         return collection.findOneAndReplace({manager}, {manager, count}, {"upsert": true})
     },

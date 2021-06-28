@@ -14,11 +14,11 @@ async function Command(args, message, channelSettings, prefix) {
     }
     else {
         if (args.includes('server') && args.length === 1) {
-            let serverChannels = await handler.query("getServerChannels", message.guild.id)
+            let serverChannels = await handler.getServerChannels(message.guild.id)
             for (let channel of serverChannels) {
-                let cs = await handler.query("getChannelSettings", channel)
+                let cs = await handler.getChannelSettings(channel)
                 cs["muted?"] = true
-                handler.query("setChannelSettings", channel, cs)
+                handler.setChannelSettings(channel, cs)
             }
             sendMessage(message.channel, `Muted serverwide. Use ${prefix}unmute to unmute`);
         }
@@ -28,7 +28,7 @@ async function Command(args, message, channelSettings, prefix) {
             }
             else {
                 channelSettings["muted?"] = true;
-                handler.query("setChannelSettings", message.channel.id, channelSettings);
+                handler.setChannelSettings(message.channel.id, channelSettings);
                 sendMessage(message.channel, `Muted in this channel. Use ${prefix}unmute to unmute`);
             }
         }
@@ -39,11 +39,11 @@ async function SlashCommand(interaction, channelSettings) {
     let { guild, options } = interaction
     let serverwide = options.get('serverwide').value
     if (serverwide) {
-        let serverChannels = await handler.query("getServerChannels", guild.id)
+        let serverChannels = await handler.getServerChannels(guild.id)
         for (let channel of serverChannels) {
-            let cs = await handler.query("getChannelSettings", channel)
+            let cs = await handler.getChannelSettings(channel)
             cs["muted?"] = true
-            handler.query("setChannelSettings", channel, cs)
+            handler.setChannelSettings(channel, cs)
         }
         interaction.editReply("Muted serverwide. Use `/unmute` to unmute")
     } else if (options.has('channel')) {
@@ -53,13 +53,13 @@ async function SlashCommand(interaction, channelSettings) {
         }
 
         let channelID = options.get('channel').channel.id
-        let cs = await handler.query("getChannelSettings", channelID)
+        let cs = await handler.getChannelSettings(channelID)
         cs["muted?"] = true
-        handler.query("setChannelSettings", channelID, cs)
+        handler.setChannelSettings(channelID, cs)
         interaction.editReply(`Muted in <#${channelID}>. Use \`/unmute\` to unmute>`)
     } else {
         channelSettings["muted?"] = true
-        handler.query("setChannelSettings", interaction.channel.id, channelSettings)
+        handler.setChannelSettings(interaction.channel.id, channelSettings)
         interaction.editReply("Muted in this channel. Use `/unmute` to unmute")
     }
 }

@@ -207,7 +207,7 @@ function SlashCommand(interaction, channelSettings) {
                     { name: `__/dare [rating] [type]__`, value: 'Gives a dare, can specify type of dare with arguments.' },
                     { name: `__/wyr [rating]__`, value: 'Asks a \'would you rather\' question, can specify type of question with arguments.' },
                     { name: `__/nhie [rating]__`, value: 'Gives a \'never have I ever\' prompt, can specify type with arguments.' },
-                    { name: `__/paranoia [target] [rating]__`, value: 'Sends a paranoia question to the target, can specify type of question with arguments. Answer a question with \'' + prefix + 'ans.\' You must mention the target (@ them), not type their nickname out.' },
+                    { name: `__/paranoia [target] [rating]__`, value: 'Sends a paranoia question to the target, can specify type of question with arguments. Answer a question with \'/ans.\' You must mention the target (@ them), not type their nickname out.' },
                     { name: `__/clearparanoia__`, value: 'Used to clear unanswered paranoia questions, can only be done in DMs.' },
                     { name: `__/ans [answer]__`, value: 'Used to answer a paranoia question, can only be done in DMs.' },
                     { name: `__/truthful [target]__`, value: 'Uses semi-quasi-pseudo-random procedures to tell you how truthful a user is while answering questions.' }

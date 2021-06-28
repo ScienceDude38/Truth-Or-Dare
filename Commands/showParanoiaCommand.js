@@ -18,7 +18,7 @@ async function Command(args, message, channelSettings, prefix) {
             } else if (args.length > 2) {
                 sendMessage(channel, "You can only specify one setting")
             } else {
-                let serverChannels = await handler.query("getServerChannels", guild.id)
+                let serverChannels = await handler.getServerChannels(guild.id)
                 let value
 
                 if (args.includes("all")) {
@@ -36,7 +36,7 @@ async function Command(args, message, channelSettings, prefix) {
 
                 if (value) {
                     for (let c of serverChannels) {
-                        let cs = await handler.query("getChannelSettings", c)
+                        let cs = await handler.getChannelSettings(c)
                         settingsChange(c, cs, ["show paranoia"], value)
                     }
                 }
@@ -85,9 +85,9 @@ async function SlashCommand(interaction, channelSettings) {
             interaction.editReply("Half of the paranoia questions answered serverwide will have the questions displayed (intended behavior). To change this, use \`/showparanoia\`")
         }
 
-        let serverChannels = await handler.query("getServerChannels", guild.id)
+        let serverChannels = await handler.getServerChannels(guild.id)
         for (let c of serverChannels) {
-            let cs = await handler.query("getChannelSettings")
+            let cs = await handler.getChannelSettings(c)
             settingsChange(c, cs, ["show paranoia"], value)
         }
     } else if (options.has('channel')) {
@@ -97,7 +97,7 @@ async function SlashCommand(interaction, channelSettings) {
         }
 
         let targetChannel = options.get('channel').channel
-        let cs = await handler.query("getChannelSettings", targetChannel.id)
+        let cs = await handler.getChannelSettings(targetChannel.id)
 
         if (value === "all") {
             interaction.editReply(`All paranoia questions in <#${targetChannel.id}> will now show after they are answered. To change this, use \`/showparanoia\``)
