@@ -5,7 +5,7 @@ async function checkUserParanoia(user, guild) {
         return false;
     }
     let userData = await handler.getParanoiaData(user);
-    if (userData) {
+    if (userData.some) {
         return userData.some((a) => a.guild === guild);
     }
     else {
@@ -14,7 +14,7 @@ async function checkUserParanoia(user, guild) {
 }
 async function addUser(user, guild, channel, question) {
     let userData = await handler.getParanoiaData(user);
-    if (userData) {
+    if (userData.push) {
         userData.push(new ParanoiaQuestion(user, guild, channel, question));
         handler.setParanoiaData(user, userData);
     }

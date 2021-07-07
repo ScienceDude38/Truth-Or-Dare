@@ -4,21 +4,21 @@ import { sendMessage, handler } from '../bot.js';
 const Aliases = ["en"]
 
 async function Command(args, message, channelSettings) {
-    let guild = message.guild
+    let { guild, channel } = message
     let member = await guild.members.fetch(message.author.id, false)
     let roles = await Promise.all(member.roles.cache.map(role => guild.roles.fetch(role.id, false)))
     let admin = member.permissions.has("ADMINISTRATOR")
         || roles.some(role => role.permissions.has("ADMINISTRATOR"))
     if (!admin) {
-        sendMessage(message.channel, "You must be an administrator to use this command.");
+        sendMessage(channel, "You must be an administrator to use this command.");
     }
     else if (!args.length) {
-        sendMessage(message.channel, "You must specify a command (truth, dare, etc.) or category (pg, irl, etc.) to enable.");
+        sendMessage(channel, "You must specify a command (truth, dare, etc.) or category (pg, irl, etc.) to enable.");
     }
     else {
         let settingNames = args.filter(item => item !== "server");
         if (!settingNames.length) {
-            sendMessage(message.channel, "You must specify a command (truth, dare, etc.) or category (pg, irl, etc.) to enable.");
+            sendMessage(channel, "You must specify a command (truth, dare, etc.) or category (pg, irl, etc.) to enable.");
         }
         else {
             let commands = args.filter(item => ["truth", "dare", "wyr", "nhie", "paranoia"].includes(item));
@@ -56,27 +56,28 @@ async function Command(args, message, channelSettings) {
                     }
                 }
             }
+
             if (toBeEnabled.length === 0) {
-                sendMessage(message.channel, "Could not find any valid commands or categories to enable. Double check that any commands or categories specified are spelled correctly and are not mutually exclusive (like `truth` and `irl`).");
+                sendMessage(channel, "Could not find any valid commands or categories to enable. Double check that any commands or categories specified are spelled correctly and are not mutually exclusive (like `truth` and `irl`).");
             }
             else {
                 if (args.includes("server")) {
                     let serverChannels = await handler.getServerChannels(guild.id)
                     for (let c of serverChannels) {
-                        let cs = await handler.getChannelSettings(c)
+                        let cs = await getCS(c, guild.id)
                         for (let setting of toBeDisabled) {
-                            cs[setting] = false
+                            cs[setting] = true
                         }
                         await handler.setChannelSettings(c, cs)
                     }
                 } else {
                     for (let setting of toBeEnabled) {
-                        channelSettings[setting] = false
+                        channelSettings[setting] = true
                     }
-                    await handler.setChannelSettings(message.channel.id, channelSettings)
+                    await handler.setChannelSettings(channel.id, channelSettings)
                 }
                 let enabledString = joinToString(toBeEnabled);
-                sendMessage(message.channel, `${enabledString} enabled ${(args.includes("server")) ? "serverwide" : "in this channel"}`);
+                sendMessage(channel, `${enabledString} enabled ${(args.includes("server")) ? "serverwide" : "in this channel"}`);
             }
         }
     }
@@ -107,7 +108,7 @@ async function SlashCommand(interaction, channelSettings) {
     if (serverwide) {
         let serverChannels = await handler.getServerChannels(guild.id)
         for (let c of serverChannels) {
-            let cs = await handler.getChannelSettings(c)
+            let cs = await getCS(c, guild.id)
             for (let setting of toBeEnabled) {
                 cs[setting] = true
             }
@@ -122,7 +123,7 @@ async function SlashCommand(interaction, channelSettings) {
         }
 
         let channelID = options.get('channel').channel.id
-        let cs = await handler.getChannelSettings(channelID)
+        let cs = await getCS(channelID, guild.id)
         for (let setting of toBeEnabled) {
             cs[setting] = true
         }
@@ -193,4 +194,24 @@ function joinToString(array) {
         (array.length === 2) ?
             `\`${array[0]}\` and \`${array[1]}\`` :
             `\`${array[0]}\``
+}
+
+const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
+const rRatedSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" };
+
+async function getCS(channelID, guildID) {
+    let cs = await handler.getChannelSettings(channelID);
+
+    if (!cs) {
+        console.log("Unindexed channel");
+
+        cs = channel.nsfw ? rRatedSettings : defaultSettings
+
+        let serverChannels = await handler.getServerChannels(guildID)
+        let newServerChannels = serverChannels.includes(channelID) ? serverChannels :  [...serverChannels, channelID]
+        handler.setChannelSettings(channelID, cs);
+        handler.setServerChannels(guildID, newServerChannels)
+    }
+
+    return cs
 }

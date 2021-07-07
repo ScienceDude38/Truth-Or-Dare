@@ -56,7 +56,7 @@ const functions = {
         let collection = collections.channelSettings
         let result = await collection.findOne({ "channelID": id })
         let returnData = result?.data
-        return returnData || defaultSettings
+        return returnData
     },
     setChannelSettings: async (id, value) => {
         let collection = collections.channelSettings
@@ -69,7 +69,7 @@ const functions = {
     getServerChannels: async (id) => {
         let collection = collections.serverChannels
         let result = await collection.findOne({ "serverID": id })
-        let returnData = result?.channels || []
+        let returnData = result?.channels
         return returnData
     },
     setServerChannels: async (id, value) => {
@@ -104,7 +104,7 @@ const functions = {
         let collection = collections.paranoiaData
         let result = await collection.findOne({ "userID": id });
         let returnData = result?.data;
-        return returnData || [];
+        return returnData;
     },
     setParanoiaData: async (id, value) => {
         let collection = collections.paranoiaData
@@ -150,7 +150,7 @@ const functions = {
     },
     getQuestions: async (name) => {
         let collection = collections.questions
-        return collection.findOne({ name }).data
+        return (await collection.findOne({ name })).data
     }
 }
 
