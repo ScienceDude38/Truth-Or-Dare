@@ -27,7 +27,8 @@ client.commands = new Discord.Collection();
 client.slashCommands = new Discord.Collection();
 const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
 const rRatedSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" };
-const allEnabledSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": true, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" }; 
+const dmSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": true, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": false, "paranoia pg13": false, "paranoia r": false, "show paranoia": "default" }; 
+const dmCommands = ['ans', 'a', 'truth', 't', 'dare', 'd', 'wyr', 'nhie', 'help', 'h', 'clear', '', 'links', 'link', 'vote', 'invite', 'ping', 'random', 'shard', 'stats', 's']
 var channelTime = {};
 client.statistics = { "timeCreated": Date.now(), "truth": 0, "dare": 0, "wyr": 0, "nhie": 0, "paranoia": 0, "serversJoined": 0, "serversLeft": 0 };
 setInterval(() => {
@@ -164,7 +165,7 @@ client.on('interaction', async (interaction) => {
     if (!interaction.isCommand()) return;
     let channelSettings = channel?.type === "text" ?
         await handler.getChannelSettings(channel.id) :
-        allEnabledSettings
+        dmSettings
 
     if (!channelSettings && channel?.type === "text") {
         console.log("Unindexed channel");
@@ -176,9 +177,12 @@ client.on('interaction', async (interaction) => {
         handler.setServerChannels(guild.id, serverChannels)
     }
 
-    if (client.slashCommands.has(commandName)) {
+    if (channel.type === 'text' && client.slashCommands.has(commandName) && commandName !== 'ans') {
         interaction.defer();
         client.slashCommands.get(commandName)(interaction, channelSettings);
+    } else if (channel.type === 'dm' && dmCommands.includes(commandName)) {
+        interaction.defer()
+        client.slashCommands.get(commandName)(interaction, dmSettings)
     }
 });
 
@@ -223,7 +227,7 @@ client.on('message', async (message) => {
     }
     else {
         if (message.content.startsWith('+')) {
-            processCommand(message, null, '+', true);
+            processCommand(message, dmSettings, '+', true);
         }
     }
 });
@@ -242,12 +246,18 @@ async function processCommand(message, channelSettings, prefix, dm) {
                 sendMessage(message.channel, "You're sending commands too fast, wait a few seconds before trying another");
             }
             else if (!channelSettings["muted?"]) {
-                if (client.commands.has(primaryCommand)) {
+                if (client.commands.has(primaryCommand) && primaryCommand !== "ans") {
                     client.commands.get(primaryCommand)(args, message, channelSettings, prefix);
                     channelTime[message.channel.id] = Date.now();
                 }
             } else if (primaryCommand === "unmute" || primaryCommand === "um") {
                 client.commands.get(primaryCommand)(args, message, channelSettings, prefix)
+            }
+        } else {
+            if(dmCommands.includes(primaryCommand)) {
+                client.commands.get(primaryCommand)(args, message, channelSettings, prefix);
+            } else if (client.commands.has(primaryCommand)) {
+                sendMessage(message.channel, "That command cannot be used in DMs")
             }
         }
     }
