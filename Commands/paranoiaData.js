@@ -6,9 +6,13 @@ async function checkUserParanoia(user, guild) {
     }
     let userData = await handler.getParanoiaData(user);
     if (userData.some) {
-        return userData.some((a) => a.guild === guild);
+        return userData.some((a) => a.guild === guild && Date.now() - a.time < 86400000);
     }
     else {
+        if (userData) {
+            console.log('user data:')
+            console.dir(userData)
+        }
         return false;
     }
 }
@@ -19,6 +23,10 @@ async function addUser(user, guild, channel, question) {
         handler.setParanoiaData(user, userData);
     }
     else {
+        if (userData) {
+            console.log('user data:')
+            console.dir(userData)
+        }
         let newUserData = [];
         newUserData.push(new ParanoiaQuestion(user, guild, channel, question));
         handler.setParanoiaData(user, newUserData);

@@ -1,6 +1,6 @@
 export { Command, SlashCommand, Meta, Aliases };
 import { questions, sendMessage } from '../bot.js';
-import { checkUserParanoia, addUser } from './paranoiaData.js';
+import { checkUserParanoia, checkUserAns, addUser } from './paranoiaData.js';
 
 const paranoiaQuestions = questions.paranoia
 
@@ -11,8 +11,8 @@ var questionLog = {};
 async function Command(args, message, channelSettings, prefix) {
     var index;
     var { guild } = message
-    var check = await checkUserParanoia(message.mentions.users.first()?.id, message.guild.id);
     var mentionedUsers = message.mentions.users;
+    var check = await checkUserParanoia(mentionedUsers.first()?.id, message.guild.id);
     if (mentionedUsers.size === 0) {
         sendMessage(message.channel, "You have to mention someone to send them a question.");
     }
@@ -24,6 +24,13 @@ async function Command(args, message, channelSettings, prefix) {
     }
     else if (check) {
         sendMessage(message.channel, "That user already has a question active.");
+        let ansCheck = checkUserAns(mentionedUsers.first()?.id)
+        if (!ansCheck) {
+            console.log('paranoia check:')
+            console.dir(check)
+            console.log('ans check:')
+            console.dir(ansCheck)
+        }
     }
     else if (args.length === 1) {
         let categories = [];

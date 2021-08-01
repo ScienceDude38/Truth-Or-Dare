@@ -1,6 +1,6 @@
 export { Command, SlashCommand, Meta, Aliases };
 import { client, sendMessage, handler } from '../bot.js';
-import { checkUserAns, removeUser } from './paranoiaData.js';
+import { checkUserAns, checkUserParanoia, removeUser } from './paranoiaData.js';
 
 const Aliases = ["a"]
 
@@ -28,6 +28,13 @@ async function Command(args, message) {
     }
     else {
         sendMessage(message.channel, "You currently have no active questions");
+        let paranoiaCheck = checkUserParanoia(message.author.id)
+        if (paranoiaCheck) {
+            console.log('paranoia check:')
+            console.dir(paranoiaCheck)
+            console.log('ans check:')
+            console.dir(checkUser)
+        }
     }
 }
 
