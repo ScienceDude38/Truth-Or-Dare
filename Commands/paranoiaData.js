@@ -10,7 +10,7 @@ async function checkUserParanoia(user, guild) {
     }
     else {
         if (userData) {
-            console.log('user data:')
+            console.log('user data: ' + user)
             console.dir(userData)
         }
         return false;
@@ -24,7 +24,7 @@ async function addUser(user, guild, channel, question) {
     }
     else {
         if (userData) {
-            console.log('user data:')
+            console.log('user data: ' + user)
             console.dir(userData)
         }
         let newUserData = [];
