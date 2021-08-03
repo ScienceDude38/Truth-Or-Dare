@@ -29,7 +29,7 @@ function Command(args, message, channelSettings, prefix) {
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
                 index = Math.floor(Math.random() * nhieQuestions[rating].length);
-            } while (questionLog[guild.id]?.includes(index));
+            } while (questionLog[guild?.id]?.includes(index));
             sendMessage(message.channel, nhieQuestions[rating][index]);
         }
     }
@@ -41,7 +41,7 @@ function Command(args, message, channelSettings, prefix) {
             if (channelSettings[("nhie " + args[0])]) {
                 do {
                     index = Math.floor(Math.random() * nhieQuestions[args[0]].length);
-                } while (questionLog[guild.id]?.includes(index));
+                } while (questionLog[guild?.id]?.includes(index));
                 sendMessage(message.channel, nhieQuestions[args[0]][index]);
             }
             else {
@@ -49,13 +49,13 @@ function Command(args, message, channelSettings, prefix) {
             }
         }
     }
-    if (!(guild.id in questionLog)) {
+    if (!(guild?.id in questionLog)) {
         questionLog[guild.id] = [];
     }
-    if (questionLog[guild.id].length > 30) {
+    if (questionLog[guild?.id]?.length > 30) {
         questionLog[guild.id].shift();
     }
-    if (index) {
+    if (index && guild) {
         questionLog[guild.id].push(index);
     }
 }
@@ -94,16 +94,16 @@ function SlashCommand(interaction, channelSettings) {
 
     do {
         index = Math.floor(Math.random() * nhieQuestions[rating].length);
-    } while (questionLog[guild.id]?.includes(index));
+    } while (questionLog[guild?.id]?.includes(index));
     interaction.editReply(nhieQuestions[rating][index])
 
-    if (!(guild.id in questionLog)) {
+    if (!(guild?.id in questionLog) && guild) {
         questionLog[guild.id] = [];
     }
-    if (questionLog[guild.id].length > 30) {
+    if (questionLog[guild?.id]?.length > 30) {
         questionLog[guild.id].shift();
     }
-    if (index) {
+    if (index && guild) {
         questionLog[guild.id].push(index);
     }
 }

@@ -9,7 +9,7 @@ var questionLog = {};
 
 function Command(args, message, channelSettings, prefix) {
     var index;
-    var guild = message.guild;
+    var { guild } = message;
     if (args.length > 2) {
         sendMessage(message.channel, "You can only specify one rating (pg, pg13, r) and/or one type (d, irl).");
     }
@@ -44,7 +44,7 @@ function Command(args, message, channelSettings, prefix) {
             let category = categories[Math.floor(Math.random() * categories.length)];
             do {
                 index = Math.floor(Math.random() * dareQuestions[category].length);
-            } while (questionLog[guild.id]?.includes(index));
+            } while (questionLog[guild?.id]?.includes(index));
             sendMessage(message.channel, dareQuestions[category][index]);
         }
     }
@@ -66,7 +66,7 @@ function Command(args, message, channelSettings, prefix) {
                         let type = types[Math.floor(Math.random() * types.length)];
                         do {
                             index = Math.floor(Math.random() * dareQuestions[(args[0] + "_" + type)].length);
-                        } while (questionLog[guild.id]?.includes(index));
+                        } while (questionLog[guild?.id]?.includes(index));
                         sendMessage(message.channel, dareQuestions[(args[0] + "_" + type)][index]);
                     }
                     else {
@@ -92,7 +92,7 @@ function Command(args, message, channelSettings, prefix) {
                         let rating = ratings[Math.floor(Math.random() * ratings.length)];
                         do {
                             index = Math.floor(Math.random() * dareQuestions[(rating + "_" + args[0])].length);
-                        } while (questionLog[guild.id]?.includes(index));
+                        } while (questionLog[guild?.id]?.includes(index));
                         sendMessage(message.channel, dareQuestions[(rating + "_" + args[0])][index]);
                     }
                     else {
@@ -137,18 +137,18 @@ function Command(args, message, channelSettings, prefix) {
             else {
                 do {
                     index = Math.floor(Math.random() * dareQuestions[(rating + "_" + type)].length);
-                } while (questionLog[guild.id]?.includes(index));
+                } while (questionLog[guild?.id]?.includes(index));
                 sendMessage(message.channel, dareQuestions[(rating + "_" + type)][index]);
             }
         }
     }
-    if (!(guild.id in questionLog)) {
+    if (!(guild?.id in questionLog) && guild) {
         questionLog[guild.id] = [];
     }
-    if (questionLog[guild.id].length > 30) {
+    if (questionLog[guild?.id]?.length > 30) {
         questionLog[guild.id].shift();
     }
-    if (index) {
+    if (index && guild) {
         questionLog[guild.id].push(index);
     }
 }
@@ -212,16 +212,16 @@ function SlashCommand(interaction, channelSettings) {
 
     do {
         index = Math.floor(Math.random() * dareQuestions[rating + "_" + type].length);
-    } while (questionLog[guild.id]?.includes(index));
+    } while (questionLog[guild?.id]?.includes(index));
     interaction.editReply(dareQuestions[rating + "_" + type][index])
     
-    if (!(guild.id in questionLog)) {
+    if (!(guild?.id in questionLog) && guild) {
         questionLog[guild.id] = [];
     }
-    if (questionLog[guild.id].length > 30) {
+    if (questionLog[guild?.id]?.length > 30) {
         questionLog[guild.id].shift();
     }
-    if (index) {
+    if (index && guild) {
         questionLog[guild.id].push(index);
     }
 }
