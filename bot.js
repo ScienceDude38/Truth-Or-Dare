@@ -190,10 +190,10 @@ client.on('interaction', async (interaction) => {
         handler.setServerChannels(guild.id, serverChannels)
     }
 
-    if (channel.type === 'text' && client.slashCommands.has(commandName) && commandName !== 'ans') {
+    if (channel?.type === 'text' && client.slashCommands.has(commandName) && commandName !== 'ans') {
         interaction.defer();
         client.slashCommands.get(commandName)(interaction, channelSettings);
-    } else if (channel.type === 'dm' && dmCommands.includes(commandName)) {
+    } else if (channel?.type === 'dm' && dmCommands.includes(commandName)) {
         interaction.defer()
         client.slashCommands.get(commandName)(interaction, dmSettings)
     }
