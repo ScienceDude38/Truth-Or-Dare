@@ -28,7 +28,7 @@ async function Command(args, message) {
     }
     else {
         sendMessage(message.channel, "You currently have no active questions");
-        let paranoiaCheck = checkUserParanoia(message.author.id)
+        let paranoiaCheck = await checkUserParanoia(message.author.id)
         if (paranoiaCheck) {
             console.log('paranoia check:')
             console.dir(paranoiaCheck)

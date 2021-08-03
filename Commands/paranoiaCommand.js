@@ -24,7 +24,7 @@ async function Command(args, message, channelSettings, prefix) {
     }
     else if (check) {
         sendMessage(message.channel, "That user already has a question active.");
-        let ansCheck = checkUserAns(mentionedUsers.first()?.id)
+        let ansCheck = await checkUserAns(mentionedUsers.first()?.id)
         if (!ansCheck) {
             console.log('paranoia check:')
             console.dir(check)
