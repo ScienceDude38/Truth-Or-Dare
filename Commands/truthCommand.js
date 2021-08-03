@@ -1,7 +1,7 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { questions, sendMessage } from '../bot.js';
+import { handler, sendMessage } from '../bot.js';
 
-const truthQuestions = questions.truth
+const truthQuestions = await handler.getQuestions('truth')
 
 const Aliases = ["t"]
 

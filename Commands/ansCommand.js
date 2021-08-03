@@ -11,7 +11,7 @@ async function Command(args, message) {
             sendMessage(message.channel, "You have to provide an answer");
         }
         else {
-            let channelSettings = await handler.query("getChannelSettings", checkUser.channel);
+            let channelSettings = await handler.getChannelSettings(checkUser.channel);
             if (!channelSettings) {
                 sendMessage(message.channel, "Channel to send reply to was not found")
             } else if ((Math.random() < 0.55 && channelSettings["show paranoia"] === "default") || channelSettings["show paranoia"] === "all") {
@@ -41,7 +41,7 @@ async function Command(args, message) {
 async function SlashCommand(interaction) {
     let checkUser = await checkUserAns(interaction.user.id)
     if (checkUser) {
-        let channelSettings = await handler.query("getChannelSettings", checkUser.channel)
+        let channelSettings = await handler.getChannelSettings(checkUser.channel)
         if (!channelSettings) {
             interaction.editReply("Channel to send reply to was not found")
         } else if ((Math.random() < 0.55 && channelSettings["show paranoia"] === "default") || channelSettings["show paranoia"] === "all") {

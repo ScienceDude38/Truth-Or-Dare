@@ -1,7 +1,7 @@
 export { Command, SlashCommand, Meta };
-import { questions, sendMessage } from '../bot.js';
+import { handler, sendMessage } from '../bot.js';
 
-const wyrQuestions = questions.wyr
+const wyrQuestions = await handler.getQuestions('wyr')
 
 var questionLog = {};
 function Command(args, message, channelSettings, prefix) {

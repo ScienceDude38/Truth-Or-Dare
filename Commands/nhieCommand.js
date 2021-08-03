@@ -1,7 +1,7 @@
 export { Command, SlashCommand, Meta };
-import { questions, sendMessage } from '../bot.js';
+import { handler, sendMessage } from '../bot.js';
 
-const nhieQuestions = questions.nhie
+const nhieQuestions = await handler.getQuestions('nhie')
 
 var questionLog = {};
 function Command(args, message, channelSettings, prefix) {

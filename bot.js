@@ -96,7 +96,7 @@ fs.readdirSync('./Commands/').forEach(async file => {
 client.on('debug', console.log)
 client.on('ready', () => {
     console.log("Connected");
-    client.user.setActivity('truth or dare | +help', { type: "PLAYING" });
+    client.user.setActivity('truth or dare | Shard ' + client.shard.ids[0], { type: "PLAYING" });
 });
 client.on('rateLimit', (info) => {
     console.log(`Rate limit hit, Time: ${info.timeout ? info.timeout : 'Unknown timeout '}, Path: ${info.path || 'Unknown path'}, Route: ${info.route || 'Unknown route'}`);
@@ -143,10 +143,12 @@ client.on('guildDelete', async (guild) => {
     handler.setStatistics(client.shard.ids[0], client.statistics)
 
     let serverChannels = await handler.getServerChannels(guild.id)
-    serverChannels.forEach(id => {
+    if (serverChannels) {
+        serverChannels.forEach?.(id => {
         handler.deleteChannelSettings(id)
     })
-    
+}
+
     console.log("Server count updated for shard " + client.shard.ids[0] + ": " + client.guilds.cache.size);
     
     handler.deletePrefix(guild.id);
@@ -155,7 +157,18 @@ client.on('guildDelete', async (guild) => {
 client.on('channelDelete', async (channel) => {
     if (channel?.type === "text") {
         let serverChannels = await handler.getServerChannels(channel.guild.id)
-        handler.setServerChannels(serverChannels.filter(c => c !== channel.id))
+        if (serverChannels.filter) {
+            handler.setServerChannels(channel.guild.id, serverChannels.filter(c => c !== channel.id))
+        } else {
+            if (serverChannels) {
+                console.log("serverChannels:")
+                console.dir(serverChannels)
+            }
+            let serverChannels = channel.guild.channels.cache
+                .filter(x => x.type === "text")
+                .map(x => x.id)
+            handler.setServerChannels(channel.guild.id, serverChannels)
+        }
         handler.deleteChannelSettings(channel.id)
     }
 });
@@ -208,9 +221,10 @@ client.on('message', async (message) => {
 
                 channelSettings = channel.nsfw ? rRatedSettings : defaultSettings
 
-                let serverChannels = [...handler.getServerChannels(guild.id), channel.id]
+                let serverChannels = await handler.getServerChannels(guild.id)
+                let newServerChannels = serverChannels.includes(channel.id) ? serverChannels :  [...serverChannels, channel.id]
                 handler.setChannelSettings(channel.id, channelSettings);
-                handler.setServerChannels(guild.id, serverChannels)
+                handler.setServerChannels(guild.id, newServerChannels)
             }
 
             processCommand(message, channelSettings, prefix, false);

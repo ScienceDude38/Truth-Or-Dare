@@ -1,8 +1,8 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { questions, sendMessage } from '../bot.js';
+import { handler, sendMessage } from '../bot.js';
 import { checkUserParanoia, checkUserAns, addUser } from './paranoiaData.js';
 
-const paranoiaQuestions = questions.paranoia
+const paranoiaQuestions = await handler.getQuestions('paranoia')
 
 const Aliases = ["p"]
 
