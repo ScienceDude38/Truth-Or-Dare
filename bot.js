@@ -47,24 +47,25 @@ setInterval(() => {
     }
 }, 600000);
 
-const questions = {}
-
 import { MongoHandler } from './mongodbFunctions.js';
 const handler = new MongoHandler()
 handler.init().then(async () => {
     console.log("MongoDB connected")
 
-    questions.truth = await handler.getQuestions("truth")
-    questions.dare = await handler.getQuestions("dare")
-    questions.wyr = await handler.getQuestions("wyr")
-    questions.nhie = await handler.getQuestions("nhie")
-    questions.paranoia = await handler.getQuestions("paranoia")
+    let truthQuestions = await handler.getQuestions("truth")
+    client.numberTruths = truthQuestions.pg.length + truthQuestions.pg13.length + truthQuestions.r.length
 
-    client.numberTruths = questions.truth.pg.length + questions.truth.pg13.length + questions.truth.r.length
-    client.numberDares = questions.dare.pg_d.length + questions.dare.pg13_d.length + questions.dare.r_d.length + questions.dare.pg_irl.length + questions.dare.pg13_irl.length + questions.dare.r_irl.length
-    client.numberWyr = questions.wyr.pg.length + questions.wyr.pg13.length + questions.wyr.r.length
-    client.numberNhie = questions.nhie.pg.length + questions.nhie.pg13.length + questions.nhie.r.length
-    client.numberParanoias = questions.paranoia.pg.length + questions.paranoia.pg13.length + questions.paranoia.r.length
+    let dareQuestions = await handler.getQuestions("dare")
+    client.numberDares = dareQuestions.pg_d.length + dareQuestions.pg13_d.length + dareQuestions.r_d.length + dareQuestions.pg_irl.length + dareQuestions.pg13_irl.length + dareQuestions.r_irl.length
+    
+    let wyrQuestions = await handler.getQuestions("wyr")
+    client.numberWyr = wyrQuestions.pg.length + wyrQuestions.pg13.length + wyrQuestions.r.length
+    
+    let nhieQuestions = await handler.getQuestions("nhie")
+    client.numberNhie = nhieQuestions.pg.length + nhieQuestions.pg13.length + nhieQuestions.r.length
+    
+    let paranoiaQuestions = await handler.getQuestions("paranoia")
+    client.numberParanoias = paranoiaQuestions.pg.length + paranoiaQuestions.pg13.length + paranoiaQuestions.r.length
 
     client.login(process.env.TOKEN)
 })
@@ -75,7 +76,6 @@ export {
     Discord,
     client,
     fs,
-    questions,
     sendMessage,
     handler,
     commandIDs,
