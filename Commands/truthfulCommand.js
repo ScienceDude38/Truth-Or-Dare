@@ -4,7 +4,7 @@ import { sendMessage } from '../bot.js';
 const Aliases = ["tf"]
 
 function Command(message, args) {
-    if (message.mentions.users.size === 0) {
+    if (!message.mentions || message.mentions.users.size === 0) {
         sendMessage(message.channel, "You have to mention a user to gauge their truthfulness.");
     }
     else if (message.mentions.users.size > 1) {
