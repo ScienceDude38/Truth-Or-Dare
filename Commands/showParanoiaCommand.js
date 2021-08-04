@@ -55,13 +55,13 @@ async function Command(args, message, channelSettings, prefix) {
 
                 if (args[0] === "all") {
                     value = "all"
-                    sendMessage(channel, `All paranoia questions will now show after they are answered. To change this, use \`${guildPrefix}showparanoia\``)
+                    sendMessage(channel, `All paranoia questions will now show after they are answered. To change this, use \`${prefix}showparanoia\``)
                 } else if (args[0] === "none") {
                     value = "none"
-                    sendMessage(channel, `No paranoia questions will be shown after they are answered. To change this, use \`${guildPrefix}showparanoia\``)
+                    sendMessage(channel, `No paranoia questions will be shown after they are answered. To change this, use \`${prefix}showparanoia\``)
                 } else if (args[0] === "default" || args[0] === "half") {
                     value = "default"
-                    sendMessage(channel, `Half of the paranoia questions answered will have the questions displayed (intended behavior). To change this, use \`${guildPrefix}showparanoia\``)
+                    sendMessage(channel, `Half of the paranoia questions answered will have the questions displayed (intended behavior). To change this, use \`${prefix}showparanoia\``)
                 } else {
                     sendMessage("That is not a valid option. Specify `all`, `none`, or `default`")
                 }
