@@ -164,7 +164,7 @@ client.on('channelDelete', async (channel) => {
                 console.log("serverChannels:")
                 console.dir(serverChannels)
             }
-            let serverChannels = channel.guild.channels.cache
+            serverChannels = channel.guild.channels.cache
                 .filter(x => x.type === "text")
                 .map(x => x.id)
             handler.setServerChannels(channel.guild.id, serverChannels)
