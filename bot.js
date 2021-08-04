@@ -89,7 +89,7 @@ fs.readdirSync('./Commands/').forEach(async file => {
         if (cmd.Aliases) cmd.Aliases.forEach(a => {
             client.commands.set(a, cmd.Command)
         })
-        if (cmd.SlashCommand) client.slashCommands.set(file.split('Command')[0], cmd.SlashCommand);
+        if (cmd.SlashCommand) client.slashCommands.set(file.split('Command')[0].toLowerCase(), cmd.SlashCommand);
     }
 });
 
