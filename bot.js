@@ -176,24 +176,25 @@ client.on('channelDelete', async (channel) => {
 client.on('interaction', async (interaction) => {
     const { channel, guild, commandName } = interaction
     if (!interaction.isCommand()) return;
-    let channelSettings = channel?.type === "text" ?
-        await handler.getChannelSettings(channel.id) :
-        dmSettings
 
-    if (!channelSettings && channel?.type === "text") {
-        console.log("Unindexed channel");
+    if (interaction.inGuild()) {
+        let channelSettings = await handler.getChannelSettings(channel.id)
 
-        channelSettings = channel.nsfw ? rRatedSettings : defaultSettings
+        if (!channelSettings) {
+            console.log("Unindexed channel")
 
-        let serverChannels = [...handler.getServerChannels(guild.id), channel.id]
-        handler.setChannelSettings(channel.id, channelSettings);
-        handler.setServerChannels(guild.id, serverChannels)
-    }
+            channelSettings = channel.nsfw ? rRatedSettings : defaultSettings
 
-    if (channel?.type === 'text' && client.slashCommands.has(commandName) && commandName !== 'ans') {
-        interaction.defer();
-        client.slashCommands.get(commandName)(interaction, channelSettings);
-    } else if (channel?.type === 'dm' && dmCommands.includes(commandName)) {
+            let serverChannels = [...handler.getServerChannels(guild.id), channel.id]
+            handler.setChannelSettings(channel.id, channelSettings);
+            handler.setServerChannels(guild.id, serverChannels)
+        }
+
+        if (client.slashCommands.has(commandName) && commandName !== "ans") {
+            interaction.defer()
+            client.slashCommands.get(commandName)(interaction, channelSettings);
+        }
+    } else if (dmCommands.includes(commandName)) {
         interaction.defer()
         client.slashCommands.get(commandName)(interaction, dmSettings)
     }
