@@ -145,7 +145,7 @@ function Command(args, message, channelSettings, prefix) {
     if (!(guild?.id in questionLog) && guild) {
         questionLog[guild.id] = [];
     }
-    if (questionLog[guild?.id]?.length > 30) {
+    if (questionLog[guild?.id]?.length > 20) {
         questionLog[guild.id].shift();
     }
     if (index && guild) {
@@ -218,7 +218,7 @@ function SlashCommand(interaction, channelSettings) {
     if (!(guild?.id in questionLog) && guild) {
         questionLog[guild.id] = [];
     }
-    if (questionLog[guild?.id]?.length > 30) {
+    if (questionLog[guild?.id]?.length > 20) {
         questionLog[guild.id].shift();
     }
     if (index && guild) {
