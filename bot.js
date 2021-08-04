@@ -177,7 +177,7 @@ client.on('interaction', async (interaction) => {
     const { channel, guild, commandName } = interaction
     if (!interaction.isCommand()) return;
 
-    if (interaction.inGuild()) {
+    if (guild) {
         let channelSettings = await handler.getChannelSettings(channel.id)
 
         if (!channelSettings) {
