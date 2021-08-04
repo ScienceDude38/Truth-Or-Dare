@@ -52,7 +52,7 @@ function Command(args, message, channelSettings, prefix) {
             }
         }
     }
-    if (!(guild?.id in questionLog)) {
+    if (!(guild?.id in questionLog) && guild) {
         questionLog[guild.id] = [];
     }
     if (questionLog[guild?.id]?.length > 50) {
