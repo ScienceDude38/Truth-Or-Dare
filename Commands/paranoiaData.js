@@ -10,8 +10,10 @@ async function checkUserParanoia(user, guild) {
     }
     else {
         if (userData) {
-            console.log('user data: ' + user)
+            console.log('user data (p): ' + user)
             console.dir(userData)
+
+            handler.deleteParanoiaData(user)
         }
         return false;
     }
@@ -24,11 +26,10 @@ async function addUser(user, guild, channel, question) {
     }
     else {
         if (userData) {
-            console.log('user data: ' + user)
+            console.log('user data (a): ' + user)
             console.dir(userData)
         }
-        let newUserData = [];
-        newUserData.push(new ParanoiaQuestion(user, guild, channel, question));
+        let newUserData = [ new ParanoiaQuestion(user, guild, channel, question) ]
         handler.setParanoiaData(user, newUserData);
     }
 }
