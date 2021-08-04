@@ -6,8 +6,11 @@ const Aliases = ["sp"]
 
 async function Command(args, message, channelSettings, prefix) {
     let { guild, channel } = message
-    let messageMember = await guild.members.fetch(message.author.id);
-    if (!messageMember.hasPermission('ADMINISTRATOR')) {
+    let member = await guild.members.fetch(message.author.id, false)
+    let roles = await Promise.all(member.roles.cache.map(role => guild.roles.fetch(role.id, false)))
+    let admin = member.permissions.has("ADMINISTRATOR")
+        || roles.some(role => role.permissions.has("ADMINISTRATOR"))
+    if (!admin) {
         sendMessage(message.channel, "You must be an administrator to use this command.");
     }
     else {
