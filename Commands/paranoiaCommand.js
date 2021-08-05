@@ -83,7 +83,7 @@ async function Command(args, message, channelSettings, prefix) {
     if (questionLog[guild.id].length > 30) {
         questionLog[guild.id].shift();
     }
-    if (index) {
+    if (index !== undefined) {
         questionLog[guild.id].push(index);
     }
 }
@@ -149,7 +149,7 @@ async function SlashCommand(interaction, channelSettings) {
     if (questionLog[guild.id].length > 30) {
         questionLog[guild.id].shift();
     }
-    if (index) {
+    if (index !== undefined) {
         questionLog[guild.id].push(index);
     }
 }

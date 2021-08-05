@@ -148,7 +148,7 @@ function Command(args, message, channelSettings, prefix) {
     if (questionLog[guild?.id]?.length > 15) {
         questionLog[guild.id].shift();
     }
-    if (index && guild) {
+    if (index !== undefined && guild) {
         questionLog[guild.id].push(index);
     }
 }
@@ -221,7 +221,7 @@ function SlashCommand(interaction, channelSettings) {
     if (questionLog[guild?.id]?.length > 15) {
         questionLog[guild.id].shift();
     }
-    if (index && guild) {
+    if (index !== undefined && guild) {
         questionLog[guild.id].push(index);
     }
 }
