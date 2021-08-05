@@ -1,36 +1,90 @@
 import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const Discord = require("discord.js-light");
-const { Intents:{ FLAGS }} = Discord;
-require('dotenv').config();
-const heapdump = require("heapdump")
-const client = new Discord.Client({
-    cacheGuilds: true,
-    cacheChannels: false,
-    cacheOverwrites: false,
-    cacheRoles: false,
-    cacheEmojis: false,
-    cachePresences: false,
+const req = createRequire(import.meta.url);
+
+import Discord, { ClientOptions, Collection, CommandInteraction, GuildChannel, Message, TextBasedChannels, TextChannel } from 'discord.js'
+
+import dotenv from 'dotenv'
+dotenv.config()
+
+import heapdump from 'heapdump'
+
+export type statistics = { 
+    timeCreated: number, 
+    truth: number, 
+    dare: number, 
+    wyr: number, 
+    nhie: number, 
+    paranoia: number, 
+    serversJoined: number, 
+    serversLeft: number 
+}
+
+export type ChannelSetting = "muted?" | "truth pg" | "truth pg13" | "truth r" | "dare pg" | "dare pg13" | "dare r" | "dare d" | "dare irl" | "wyr pg" | "wyr pg13" | "wyr r" | "nhie pg" | "nhie pg13" | "nhie r" | "paranoia pg" | "paranoia pg13" | "paranoia r" | "show paranoia"
+export type ChannelSettings = {
+    [key in ChannelSetting]: key extends "show paranoia" ? string : boolean
+}
+
+interface CustomClient extends Discord.Client {
+    commands: Collection<string, Function>,
+    slashCommands: Collection<string, Function>,
+    statistics: statistics,
+    numberTruths: number,
+    numberDares: number,
+    numberWyr: number,
+    numberNhie: number,
+    numberParanoias: number
+}
+
+class CustomClient extends Discord.Client {
+    constructor(options: ClientOptions, commands: Collection<string, Function>, slashCommands: Collection<string, Function>, statistics: statistics) {
+        super(options)
+        this.commands = commands
+        this.slashCommands = slashCommands,
+        this.statistics = statistics
+        this.numberTruths = 0
+        this.numberDares = 0
+        this.numberWyr = 0
+        this.numberNhie = 0
+        this.numberParanoias = 0
+    }
+}
+
+const client: CustomClient = new CustomClient({
+    makeCache: Discord.Options.cacheWithLimits({
+        ApplicationCommandManager: 0,
+        BaseGuildEmojiManager: 0,
+        GuildBanManager: 0,
+        GuildInviteManager: 0,
+        GuildMemberManager: 0,
+        GuildStickerManager: 0,
+        MessageManager: 0,
+        PresenceManager: 0,
+        ReactionManager: 0,
+        ReactionUserManager: 0,
+        StageInstanceManager: 0,
+        ThreadManager: 0,
+        ThreadMemberManager: 0,
+        UserManager: {
+            maxSize: 25,
+            keepOverLimit: (value, key, collection) => value.id === client.user!.id
+        },
+        VoiceStateManager: 0
+    }),
     allowedMentions: { parse:['users'], repliedUser: true },
     intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"]
-});
-const topgg = require('@top-gg/sdk');
-const topggAPI = new topgg.Api(process.env.TOPGG);
-const fs = require('fs');
-const originalLog = console.log;
-console.log = function (input) {
-    let date = new Date();
-    originalLog(`${(date.getHours() >= 10) ? date.getHours() : "0" + date.getHours()}:${(date.getMinutes() >= 10) ? date.getMinutes() : "0" + date.getMinutes()}:${(date.getSeconds() >= 10) ? date.getSeconds() : "0" + date.getSeconds()}    ${input}`);
-};
+}, new Discord.Collection(), new Discord.Collection(), { "timeCreated": Date.now(), "truth": 0, "dare": 0, "wyr": 0, "nhie": 0, "paranoia": 0, "serversJoined": 0, "serversLeft": 0 });
 
-client.commands = new Discord.Collection();
-client.slashCommands = new Discord.Collection();
-const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
+import topgg from '@top-gg/sdk'
+const topggAPI = new topgg.Api(process.env.TOPGG!);
+
+import fs from 'fs'
+
+export const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
 const rRatedSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" };
 const dmSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": true, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": false, "paranoia pg13": false, "paranoia r": false, "show paranoia": "default" }; 
 const dmCommands = ['ans', 'a', 'truth', 't', 'dare', 'd', 'wyr', 'nhie', 'help', 'h', 'clear', '', 'links', 'link', 'vote', 'invite', 'ping', 'random', 'shard', 'stats', 's']
-var channelTime = {};
-client.statistics = { "timeCreated": Date.now(), "truth": 0, "dare": 0, "wyr": 0, "nhie": 0, "paranoia": 0, "serversJoined": 0, "serversLeft": 0 };
+var channelTime: Record<string, number> = {};
+
 setInterval(() => {
     if (Date.now() - client.statistics.timeCreated > 3600000) {
         client.statistics = {
@@ -48,29 +102,34 @@ setInterval(() => {
 }, 600000);
 
 import { MongoHandler } from './mongodbFunctions.js';
+import { truthQuestions } from "./Commands/truthCommand.js";
+import { dareQuestions } from "./Commands/dareCommand.js";
+import { wyrQuestions } from "./Commands/wyrCommand.js";
+import { nhieQuestions } from "./Commands/nhieCommand.js";
+import { paranoiaQuestions } from "./Commands/paranoiaCommand.js";
 const handler = new MongoHandler()
-handler.init().then(async () => {
+handler.init(client.shard!.ids[0]).then(async () => {
     console.log("MongoDB connected")
 
-    let truthQuestions = await handler.getQuestions("truth")
+    let truthQuestions = <truthQuestions>await handler.getQuestions("truth")
     client.numberTruths = truthQuestions.pg.length + truthQuestions.pg13.length + truthQuestions.r.length
 
-    let dareQuestions = await handler.getQuestions("dare")
+    let dareQuestions = <dareQuestions>await handler.getQuestions("dare")
     client.numberDares = dareQuestions.pg_d.length + dareQuestions.pg13_d.length + dareQuestions.r_d.length + dareQuestions.pg_irl.length + dareQuestions.pg13_irl.length + dareQuestions.r_irl.length
     
-    let wyrQuestions = await handler.getQuestions("wyr")
+    let wyrQuestions = <wyrQuestions>await handler.getQuestions("wyr")
     client.numberWyr = wyrQuestions.pg.length + wyrQuestions.pg13.length + wyrQuestions.r.length
     
-    let nhieQuestions = await handler.getQuestions("nhie")
+    let nhieQuestions = <nhieQuestions>await handler.getQuestions("nhie")
     client.numberNhie = nhieQuestions.pg.length + nhieQuestions.pg13.length + nhieQuestions.r.length
     
-    let paranoiaQuestions = await handler.getQuestions("paranoia")
+    let paranoiaQuestions = <paranoiaQuestions>await handler.getQuestions("paranoia")
     client.numberParanoias = paranoiaQuestions.pg.length + paranoiaQuestions.pg13.length + paranoiaQuestions.r.length
 
     client.login(process.env.TOKEN)
 })
 
-const commandIDs = require('./commandIDs.json')
+const commandIDs = req('./commandIDs.json')
 
 export {
     Discord,
@@ -86,7 +145,7 @@ fs.readdirSync('./Commands/').forEach(async file => {
     const cmd = (await import(`./Commands/${file}`));
     if (file.includes("Command")) {
         if (cmd.Command) client.commands.set(file.split('Command')[0].toLowerCase(), cmd.Command);
-        if (cmd.Aliases) cmd.Aliases.forEach(a => {
+        if (cmd.Aliases) cmd.Aliases.forEach((a: string) => {
             client.commands.set(a, cmd.Command)
         })
         if (cmd.SlashCommand) client.slashCommands.set(file.split('Command')[0].toLowerCase(), cmd.SlashCommand);
@@ -96,7 +155,7 @@ fs.readdirSync('./Commands/').forEach(async file => {
 client.on('debug', console.log)
 client.on('ready', () => {
     console.log("Connected");
-    client.user.setActivity('truth or dare | Shard ' + client.shard.ids[0], { type: "PLAYING" });
+    client.user!.setActivity('truth or dare | Shard ' + client.shard!.ids[0], { type: "PLAYING" });
 });
 client.on('rateLimit', (info) => {
     console.log(`Rate limit hit, Time: ${info.timeout ? info.timeout : 'Unknown timeout '}, Path: ${info.path || 'Unknown path'}, Route: ${info.route || 'Unknown route'}`);
@@ -104,12 +163,12 @@ client.on('rateLimit', (info) => {
 client.on('guildCreate', async (guild) => {
     console.log(`Server joined: ${guild.name} (${guild.id})`);
 
-    let serverChannels = []
+    let serverChannels: string[] = []
     guild.channels.cache
-        .filter(c => c.type === 'text')
+        .filter(c => c.type === 'GUILD_TEXT')
         .forEach(c => {
             serverChannels.push(c.id)
-            if (c.nsfw) { 
+            if ((<TextChannel>c).nsfw) { 
                 handler.setChannelSettings(c.id, rRatedSettings)
             } else {
                 handler.setChannelSettings(c.id, defaultSettings)
@@ -117,30 +176,30 @@ client.on('guildCreate', async (guild) => {
         });
         handler.setServerChannels(guild.id, serverChannels);
 
-    handler.setServerCount(client.shard.ids[0], client.guilds.cache.size)
+    handler.setServerCount(client.shard!.ids[0], client.guilds.cache.size)
     client.statistics.serversJoined++;
     /* await topggAPI.postStats({
         serverCount: client.guilds.cache.size,
         shardId: client.shard.ids[0],
         shardCount: client.options.shardCount
     }); */
-    handler.setStatistics(client.shard.ids[0], client.statistics)
+    handler.setStatistics(client.shard!.ids[0], client.statistics)
 
-    console.log("Server count updated for shard " + client.shard.ids[0] + ": " + client.guilds.cache.size);
+    console.log("Server count updated for shard " + client.shard!.ids[0] + ": " + client.guilds.cache.size);
 
     handler.setPrefix(guild.id, '+');
 });
 client.on('guildDelete', async (guild) => {
     console.log(`Server left: ${guild.name} (${guild.id})`);
 
-    handler.setServerCount(client.shard.ids[0], client.guilds.cache.size)
+    handler.setServerCount(client.shard!.ids[0], client.guilds.cache.size)
     client.statistics.serversLeft++;
     /* await topggAPI.postStats({
         serverCount: client.guilds.cache.size,
         shardId: client.shard.ids[0],
         shardCount: client.options.shardCount
     }); */
-    handler.setStatistics(client.shard.ids[0], client.statistics)
+    handler.setStatistics(client.shard!.ids[0], client.statistics)
 
     let serverChannels = await handler.getServerChannels(guild.id)
     if (serverChannels) {
@@ -149,13 +208,13 @@ client.on('guildDelete', async (guild) => {
     })
 }
 
-    console.log("Server count updated for shard " + client.shard.ids[0] + ": " + client.guilds.cache.size);
+    console.log("Server count updated for shard " + client.shard!.ids[0] + ": " + client.guilds.cache.size);
     
     handler.deletePrefix(guild.id);
 });
 
 client.on('channelDelete', async (channel) => {
-    if (channel?.type === "text") {
+    if (channel?.type === "GUILD_TEXT") {
         let serverChannels = await handler.getServerChannels(channel.guild.id)
         if (serverChannels.filter) {
             handler.setServerChannels(channel.guild.id, serverChannels.filter(c => c !== channel.id))
@@ -165,7 +224,7 @@ client.on('channelDelete', async (channel) => {
                 console.dir(serverChannels)
             }
             serverChannels = channel.guild.channels.cache
-                .filter(x => x.type === "text")
+                .filter(x => x.type === "GUILD_TEXT")
                 .map(x => x.id)
             handler.setServerChannels(channel.guild.id, serverChannels)
         }
@@ -174,34 +233,34 @@ client.on('channelDelete', async (channel) => {
 });
 
 client.on('interaction', async (interaction) => {
-    const { channel, guild, commandName } = interaction
     if (!interaction.isCommand()) return;
+    const { channel, guild, commandName } = interaction
 
     if (guild) {
-        let channelSettings = await handler.getChannelSettings(channel.id)
+        let channelSettings = channel ? await handler.getChannelSettings(channel.id) : undefined
 
-        if (!channelSettings) {
+        if (!channelSettings && channel && guild) {
             console.log("Unindexed channel")
 
-            channelSettings = channel.nsfw ? rRatedSettings : defaultSettings
+            channelSettings = (<TextChannel>channel).nsfw ? rRatedSettings : defaultSettings
 
-            let serverChannels = [...handler.getServerChannels(guild.id), channel.id]
+            let serverChannels = [...await handler.getServerChannels(guild.id), channel.id]
             handler.setChannelSettings(channel.id, channelSettings);
             handler.setServerChannels(guild.id, serverChannels)
         }
 
         if (client.slashCommands.has(commandName) && commandName !== "ans") {
             interaction.defer()
-            client.slashCommands.get(commandName)(interaction, channelSettings);
+            client.slashCommands.get(commandName)!(interaction, channelSettings);
         }
     } else if (dmCommands.includes(commandName)) {
         interaction.defer()
-        client.slashCommands.get(commandName)(interaction, dmSettings)
+        client.slashCommands.get(commandName)!(interaction, dmSettings)
     }
 });
 
 client.on('message', async (message) => {
-    if (message.author.bot || (message.channel.type !== "text" && message.channel.type !== "dm")) {
+    if (message.author.bot || (message.channel.type !== "GUILD_TEXT" && message.channel.type !== "DM")) {
         return;
     }
 
@@ -217,10 +276,10 @@ client.on('message', async (message) => {
         if (message.content.startsWith(prefix)) {
             let channelSettings = await handler.getChannelSettings(channel.id);
 
-            if (!channelSettings) {
+            if (!channelSettings && channel && guild) {
                 console.log("Unindexed channel");
 
-                channelSettings = channel.nsfw ? rRatedSettings : defaultSettings
+                channelSettings = (<TextChannel>channel).nsfw ? rRatedSettings : defaultSettings
 
                 let serverChannels = await handler.getServerChannels(guild.id)
                 let newServerChannels = serverChannels.includes(channel.id) ? serverChannels :  [...serverChannels, channel.id]
@@ -228,7 +287,7 @@ client.on('message', async (message) => {
                 handler.setServerChannels(guild.id, newServerChannels)
             }
 
-            processCommand(message, channelSettings, prefix, false);
+            processCommand(message, channelSettings!, prefix, false);
 
             if (Math.random() < 0.007) {
                 let linkEmbed = new Discord.MessageEmbed()
@@ -247,7 +306,7 @@ client.on('message', async (message) => {
     }
 });
 
-async function processCommand(message, channelSettings, prefix, dm) {
+async function processCommand(message: Message, channelSettings: ChannelSettings, prefix: string, dm: boolean) {
     var fullCommand = dm ? message.content.substr(1) : message.content.substr(prefix.length)
     let splitCommand = fullCommand.toLowerCase().trim().split(/ +|\n/gm);
     let primaryCommand = splitCommand[0];
@@ -262,15 +321,15 @@ async function processCommand(message, channelSettings, prefix, dm) {
             }
             else if (!channelSettings["muted?"]) {
                 if (client.commands.has(primaryCommand) && primaryCommand !== "ans") {
-                    client.commands.get(primaryCommand)(args, message, channelSettings, prefix);
+                    client.commands.get(primaryCommand)!(args, message, channelSettings, prefix);
                     channelTime[message.channel.id] = Date.now();
                 }
             } else if (primaryCommand === "unmute" || primaryCommand === "um") {
-                client.commands.get(primaryCommand)(args, message, channelSettings, prefix)
+                client.commands.get(primaryCommand)!(args, message, channelSettings, prefix)
             }
         } else {
             if(dmCommands.includes(primaryCommand)) {
-                client.commands.get(primaryCommand)(args, message, channelSettings, prefix);
+                client.commands.get(primaryCommand)!(args, message, channelSettings, prefix);
             } else if (client.commands.has(primaryCommand)) {
                 sendMessage(message.channel, "That command cannot be used in DMs")
             }
@@ -278,7 +337,7 @@ async function processCommand(message, channelSettings, prefix, dm) {
     }
 }
 
-function sendMessage(channel, messageContent) {
+function sendMessage(channel: TextBasedChannels, messageContent: any) {
     channel.send(messageContent).catch(() => { console.log("Missing permissions"); });
 }
 

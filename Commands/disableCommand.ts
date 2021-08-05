@@ -1,15 +1,19 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { sendMessage, handler } from '../bot.js';
+import { CommandInteraction, Guild, Message, TextChannel } from 'discord.js';
+import { sendMessage, handler, ChannelSettings, ChannelSetting } from '../bot.js';
+
+type notShowParanoia<T> = T extends "show paranoia" ? never : T
+type ValidChannelSetting = notShowParanoia<ChannelSetting>
 
 const Aliases = ["dis"]
 
-async function Command(args, message, channelSettings) {
+async function Command(args: string[], message: Message, channelSettings: ChannelSettings) {
     let {guild, channel} = message
 
-    let member = await guild.members.fetch(message.author.id, false)
-    let roles = await Promise.all(member.roles.cache.map(role => guild.roles.fetch(role.id, false)))
+    let member = await guild!.members.fetch(message.author.id)
+    let roles = await Promise.all(member.roles.cache.map(role => guild!.roles.fetch(role.id)))
     let admin = member.permissions.has("ADMINISTRATOR")
-        || roles.some(role => role.permissions.has("ADMINISTRATOR"))
+        || roles.some(role => role?.permissions.has("ADMINISTRATOR"))
     if (!admin) {
         sendMessage(channel, "You must be an administrator to use this command.");
     }
@@ -24,7 +28,7 @@ async function Command(args, message, channelSettings) {
         else {
             let commands = args.filter(item => ["truth", "dare", "wyr", "nhie", "paranoia"].includes(item));
             let categories = args.filter(item => ["pg", "pg13", "r", "d", "irl"].includes(item));
-            let toBeDisabled = [];
+            let toBeDisabled: ValidChannelSetting[] = [];
             if (args.includes("all")) {
                 toBeDisabled = ["truth pg", "truth pg13", "dare pg", "dare pg13", "dare d", "dare irl", "wyr pg", "wyr pg13", "nhie pg", "nhie pg13", "paranoia pg", "paranoia pg13"]
             }
@@ -33,16 +37,16 @@ async function Command(args, message, channelSettings) {
                     if (categories.length !== 0) {
                         for (let category of categories) {
                             if (command === "dare" || (category !== "d" && category !== "irl")) {
-                                toBeDisabled.push(command + " " + category);
+                                toBeDisabled.push(<ValidChannelSetting>(command + " " + category));
                             }
                         }
                     }
                     else {
                         if (command !== "dare") {
-                            ["pg", "pg13"].forEach(category => toBeDisabled.push(command + " " + category));
+                            ["pg", "pg13"].forEach(category => toBeDisabled.push(<ValidChannelSetting>(command + " " + category)));
                         }
                         else {
-                            ["pg", "pg13", "d", "irl"].forEach(category => toBeDisabled.push("dare " + category));
+                            ["pg", "pg13", "d", "irl"].forEach(category => toBeDisabled.push(<ValidChannelSetting>("dare " + category)));
                         }
                     }
                 }
@@ -50,10 +54,10 @@ async function Command(args, message, channelSettings) {
             else if (categories.length !== 0) {
                 for (let category of categories) {
                     if (category === "d" || category === "irl") {
-                        toBeDisabled.push("dare " + category);
+                        toBeDisabled.push(<ValidChannelSetting>("dare " + category));
                     }
                     else {
-                        ["truth", "dare", "wyr", "nhie", "paranoia"].forEach(command => toBeDisabled.push(command + " " + category));
+                        ["truth", "dare", "wyr", "nhie", "paranoia"].forEach(command => toBeDisabled.push(<ValidChannelSetting>(command + " " + category)));
                     }
                 }
             }
@@ -63,9 +67,9 @@ async function Command(args, message, channelSettings) {
             }
             else {
                 if (args.includes("server")) {
-                    let serverChannels = await handler.getServerChannels(guild.id)
+                    let serverChannels = await handler.getServerChannels(guild!.id)
                     for (let c of serverChannels) {
-                        let cs = await getCS(c, guild.id)
+                        let cs = await getCS(c, guild!)
                         for (let setting of toBeDisabled) {
                             cs[setting] = false
                         }
@@ -84,32 +88,32 @@ async function Command(args, message, channelSettings) {
     }
 }
 
-async function SlashCommand(interaction, channelSettings) {
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
     let { guild, channel, options } = interaction
-    let serverwide = options.get('serverwide').value
-    let command = options.get('command').value
-    let category = options.get('category').value
+    let serverwide = options.get('serverwide')!.value
+    let command = options.get('command')!.value
+    let category = options.get('category')!.value
 
     if ((command !== "dare" && command !== "all") && (category === "d" || category === "irl")) {
         interaction.editReply("The d and irl categories only apply to the dare command")
         return
     }
 
-    let toBeDisabled = []
+    let toBeDisabled: ValidChannelSetting[] = []
     let commandArray = command === "all" ? ["truth", "dare", "wyr", "nhie", "paranoia"] : [command]
     let categoryArray = category === "all" ? ["pg", "pg13", "r", "d", "irl"] : [category]
     for (let x of commandArray) {
         for (let y of categoryArray) {
             if (x === "dare" || (y !== "d" && y !== "irl")) {
-                toBeDisabled.push(x + " " + y)
+                toBeDisabled.push(<ValidChannelSetting>(x + " " + y))
             }
         }
     }
 
     if (serverwide) {
-        let serverChannels = await handler.getServerChannels(guild.id)
+        let serverChannels = await handler.getServerChannels(guild!.id)
         for (let c of serverChannels) {
-            let cs = await getCS(c, guild.id)
+            let cs = await getCS(c, guild!)
             for (let setting of toBeDisabled) {
                 cs[setting] = false
             }
@@ -117,14 +121,14 @@ async function SlashCommand(interaction, channelSettings) {
         }
 
         interaction.editReply(joinToString(toBeDisabled) + " disabled serverwide")
-    } else if (options.has('channel')) {
-        if (options.get('channel').channel.type !== "text") {
+    } else if (options.data.some(o => o.name === 'channel')) {
+        if (options.get('channel')!.channel!.type !== "GUILD_TEXT") {
             interaction.editReply("The channel must be a text channel")
             return
         }
 
-        let channelID = options.get('channel').channel.id
-        let cs = await getCS(channelID, guild.id)
+        let channelID = options.get('channel')!.channel!.id
+        let cs = await getCS(channelID, guild!)
         for (let setting of toBeDisabled) {
             cs[setting] = false
         }
@@ -135,7 +139,7 @@ async function SlashCommand(interaction, channelSettings) {
         for (let setting of toBeDisabled) {
             channelSettings[setting] = false
         }
-        await handler.setChannelSettings(channel.id, channelSettings)
+        await handler.setChannelSettings(channel!.id, channelSettings)
 
         interaction.editReply(`${joinToString(toBeDisabled)} disabled in the current channel`)
     }
@@ -189,7 +193,7 @@ const Meta = {
     ]
 }
 
-function joinToString(array) {
+function joinToString(array: string[]) {
     return (array.length > 2) ?
         `\`${array.slice(0, -1).join("\`, \`")}\`, and \`${array[array.length - 1]}\`` :
         (array.length === 2) ?
@@ -200,18 +204,19 @@ function joinToString(array) {
 const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
 const rRatedSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" };
 
-async function getCS(channelID, guildID) {
+async function getCS(channelID: string, guild: Guild) {
     let cs = await handler.getChannelSettings(channelID);
 
     if (!cs) {
         console.log("Unindexed channel");
 
-        cs = channel.nsfw ? rRatedSettings : defaultSettings
+        let channel = await guild.channels.fetch(channelID)
+        cs = (<TextChannel>channel).nsfw ? rRatedSettings : defaultSettings
 
-        let serverChannels = await handler.getServerChannels(guildID)
+        let serverChannels = await handler.getServerChannels(guild.id)
         let newServerChannels = serverChannels.includes(channelID) ? serverChannels :  [...serverChannels, channelID]
         handler.setChannelSettings(channelID, cs);
-        handler.setServerChannels(guildID, newServerChannels)
+        handler.setServerChannels(guild.id, newServerChannels)
     }
 
     return cs

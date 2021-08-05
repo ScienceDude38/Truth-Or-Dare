@@ -1,6 +1,6 @@
 # Todo
-- Typescript migration
-- Migrate to newest discord.js version
+- fix if (cs) checks
+- test caching behavior of new discord.js version
 - Add 1 and 2 reactions to wyr questions
 - Incorporate message components into bot commands (maybe not practical)
 
