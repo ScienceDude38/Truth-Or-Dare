@@ -1,6 +1,3 @@
-import { createRequire } from "module";
-const req = createRequire(import.meta.url);
-
 import Discord, { ClientOptions, Collection, CommandInteraction, GuildChannel, Message, TextBasedChannels, TextChannel } from 'discord.js'
 
 import dotenv from 'dotenv'
@@ -129,7 +126,7 @@ handler.init(client.shard!.ids[0]).then(async () => {
     client.login(process.env.TOKEN)
 })
 
-const commandIDs = req('./commandIDs.json')
+import * as commandIDs from './commandIDs.json'
 
 export {
     Discord,

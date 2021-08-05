@@ -6,7 +6,15 @@ import { checkUserParanoia, checkUserAns, addUser } from './paranoiaData.js';
 type paranoiaCategory = "pg" | "pg13" | "r"
 export type paranoiaQuestions = Record<paranoiaCategory, string[]>
 
-const paranoiaQuestions = <paranoiaQuestions>await handler.getQuestions('paranoia')
+let paranoiaQuestions: paranoiaQuestions = {
+    "pg": [],
+    "pg13": [],
+    "r": []
+};
+
+(async function() {
+    paranoiaQuestions = <paranoiaQuestions>await handler.getQuestions('paranoia')
+})()
 
 const Aliases = ["p"]
 

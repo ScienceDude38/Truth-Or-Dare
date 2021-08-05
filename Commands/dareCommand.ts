@@ -1,5 +1,5 @@
 export { Command, SlashCommand, Meta, Aliases };
-    import { CommandInteraction, Message } from 'discord.js';
+import { CommandInteraction, Message } from 'discord.js';
 import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
 
 type dareRating = "pg" | "pg13" | "r"
@@ -7,7 +7,18 @@ type dareType = "d" | "irl"
 type dareCategory = `${dareRating}_${dareType}`
 export type dareQuestions = Record<dareCategory, string[]>
 
-const dareQuestions = <dareQuestions>await handler.getQuestions('dare')
+let dareQuestions: dareQuestions = {
+    "pg_d": [],
+    "pg_irl": [],
+    "pg13_d": [],
+    "pg13_irl": [],
+    "r_d": [],
+    "r_irl": []
+};
+
+(async function() {
+    dareQuestions = <dareQuestions>await handler.getQuestions('dare')
+})()
 
 const Aliases = ["d"]
 

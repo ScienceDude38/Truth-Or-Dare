@@ -5,7 +5,15 @@ import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js
 type truthCategory = "pg" | "pg13" | "r"
 export type truthQuestions = Record<truthCategory, string[]>
 
-const truthQuestions = <truthQuestions>await handler.getQuestions('truth')
+let truthQuestions: truthQuestions = {
+    "pg": [],
+    "pg13": [],
+    "r": []
+};
+
+(async function() {
+    truthQuestions = <truthQuestions>await handler.getQuestions('truth')
+})()
 
 const Aliases = ["t"]
 

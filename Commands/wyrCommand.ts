@@ -5,7 +5,15 @@ import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js
 type wyrCategory = "pg" | "pg13" | "r"
 export type wyrQuestions = Record<wyrCategory, string[]>
 
-const wyrQuestions = <wyrQuestions>await handler.getQuestions('wyr')
+let wyrQuestions: wyrQuestions = {
+    "pg": [],
+    "pg13": [],
+    "r": []
+};
+
+(async function() {
+    wyrQuestions = <wyrQuestions>await handler.getQuestions('wyr')
+})()
 
 var questionLog: Record<string, number[]> = {};
 

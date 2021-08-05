@@ -6,7 +6,15 @@ type nhieCategory = "pg" | "pg13" | "r"
 export type nhieQuestions = Record<nhieCategory, string[]>
 
 
-const nhieQuestions = <nhieQuestions>await handler.getQuestions('nhie')
+let nhieQuestions: nhieQuestions = {
+    "pg": [],
+    "pg13": [],
+    "r": []
+};
+
+(async function() {
+    nhieQuestions = <nhieQuestions>await handler.getQuestions('nhie')
+})()
 
 var questionLog: Record<string, number[]> = {};
 
