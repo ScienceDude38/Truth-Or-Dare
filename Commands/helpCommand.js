@@ -92,7 +92,7 @@ function Command(args, message, channelSettings, prefix) {
                     { name: '__Aliases__', value: `\`${prefix}paranoia\`, \`${prefix}p\``},
                     { name: '__Usage__', value: `**${prefix}paranoia [target] [rating]**: Sends a paranoia question to the target. Select the target by @ing them.` },
                     { name: '__Arguments__', value: '**pg**: Gives a "PG" question (no inappropriate content)\n**pg13**: Gives a "PG-13" question (may be suggestive, many have to with dating/relationships.)\n**r**: Gives a "R" rated question (most likely overtly sexual)' }
-                ], message, prefix))
+                ], prefix))
                 break;
             case "ans":
                 sendMessage(message.channel, createHelpEmbed(paranoiaColor, 'Answer command', [

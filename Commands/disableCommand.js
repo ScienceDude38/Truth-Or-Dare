@@ -65,7 +65,7 @@ async function Command(args, message, channelSettings) {
                 if (args.includes("server")) {
                     let serverChannels = await handler.getServerChannels(guild.id)
                     for (let c of serverChannels) {
-                        let cs = await getCS(c, guild.id)
+                        let cs = await getCS(c, guild)
                         for (let setting of toBeDisabled) {
                             cs[setting] = false
                         }
@@ -109,7 +109,7 @@ async function SlashCommand(interaction, channelSettings) {
     if (serverwide) {
         let serverChannels = await handler.getServerChannels(guild.id)
         for (let c of serverChannels) {
-            let cs = await getCS(c, guild.id)
+            let cs = await getCS(c, guild)
             for (let setting of toBeDisabled) {
                 cs[setting] = false
             }
@@ -124,7 +124,7 @@ async function SlashCommand(interaction, channelSettings) {
         }
 
         let channelID = options.get('channel').channel.id
-        let cs = await getCS(channelID, guild.id)
+        let cs = await getCS(channelID, guild)
         for (let setting of toBeDisabled) {
             cs[setting] = false
         }
@@ -200,18 +200,19 @@ function joinToString(array) {
 const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
 const rRatedSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" };
 
-async function getCS(channelID, guildID) {
+async function getCS(channelID, guild) {
     let cs = await handler.getChannelSettings(channelID);
 
     if (!cs) {
         console.log("Unindexed channel");
 
+        let channel = await guild.channels.fetch(channelID)
         cs = channel.nsfw ? rRatedSettings : defaultSettings
 
-        let serverChannels = await handler.getServerChannels(guildID)
+        let serverChannels = await handler.getServerChannels(guild.id)
         let newServerChannels = serverChannels.includes(channelID) ? serverChannels :  [...serverChannels, channelID]
         handler.setChannelSettings(channelID, cs);
-        handler.setServerChannels(guildID, newServerChannels)
+        handler.setServerChannels(guild.id, newServerChannels)
     }
 
     return cs

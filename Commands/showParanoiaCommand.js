@@ -63,7 +63,7 @@ async function Command(args, message, channelSettings, prefix) {
                     value = "default"
                     sendMessage(channel, `Half of the paranoia questions answered will have the questions displayed (intended behavior). To change this, use \`${prefix}showparanoia\``)
                 } else {
-                    sendMessage("That is not a valid option. Specify `all`, `none`, or `default`")
+                    sendMessage(channel, "That is not a valid option. Specify `all`, `none`, or `default`")
                 }
 
                 if (value) {
@@ -76,7 +76,7 @@ async function Command(args, message, channelSettings, prefix) {
 }
 
 async function SlashCommand(interaction, channelSettings) {
-    let { options, channel } = interaction
+    let { options, channel, guild } = interaction
     
     let server = options.get('serverwide').value
     let value = options.get('value').value
