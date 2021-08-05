@@ -1,6 +1,5 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { sendMessage } from '../bot.js';
-import { settingsChange } from './settingsChange.js';
+import { handler, sendMessage } from '../bot.js';
 
 const Aliases = ["sp"]
 
@@ -40,7 +39,8 @@ async function Command(args, message, channelSettings, prefix) {
                 if (value) {
                     for (let c of serverChannels) {
                         let cs = await handler.getChannelSettings(c)
-                        settingsChange(c, cs, ["show paranoia"], value)
+                        cs["show paranoia"] = value
+                        handler.setChannelSettings(c, cs)
                     }
                 }
             }
@@ -67,7 +67,8 @@ async function Command(args, message, channelSettings, prefix) {
                 }
 
                 if (value) {
-                    settingsChange(channel.id, channelSettings, ["show paranoia"], value)
+                    channelSettings["show paranoia"] = value
+                    handler.setChannelSettings(channel.id, channelSettings)
                 }
             }
         }
@@ -91,7 +92,8 @@ async function SlashCommand(interaction, channelSettings) {
         let serverChannels = await handler.getServerChannels(guild.id)
         for (let c of serverChannels) {
             let cs = await handler.getChannelSettings(c)
-            settingsChange(c, cs, ["show paranoia"], value)
+            cs["show paranoia"] = value
+            handler.setChannelSettings(c, cs)
         }
     } else if (options.has('channel')) {
         if (options.get('channel').channel.type !== "text") {
@@ -110,7 +112,8 @@ async function SlashCommand(interaction, channelSettings) {
             interaction.editReply(`Half of the paranoia questions in <#${targetChannel.id}> answered will have the questions displayed (intended behavior). To change this, use \`/showparanoia\``)
         }
 
-        settingsChange(targetChannel.id, cs, ["show paranoia"], value)
+        cs["show paranoia"] = value
+        handler.setChannelSettings(targetChannel.id, cs)
     } else {
         if (value === "all") {
             interaction.editReply("All paranoia questions will now show after they are answered. To change this, use \`/showparanoia\`")
@@ -120,7 +123,8 @@ async function SlashCommand(interaction, channelSettings) {
             interaction.editReply("Half of the paranoia questions answered will have the questions displayed (intended behavior). To change this, use \`/showparanoia\`")
         }
 
-        settingsChange(channel.id, channelSettings, ["show paranoia"], value)
+        channelSettings["show paranoia"] = value
+        handler.setChannelSettings(channel.id, channelSettings)
     }
 }
 
