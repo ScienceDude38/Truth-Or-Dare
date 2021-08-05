@@ -6,6 +6,8 @@
         "esModuleInterop": true,
         "skipLibCheck": false,
         "forceConsistentCasingInFileNames": true,
-        "moduleResolution": "node"
+        "moduleResolution": "node",
+        "outDir": "build",
+        "pretty": true
     }
 }

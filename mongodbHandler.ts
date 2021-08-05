@@ -23,6 +23,7 @@ ipc.serve(
 
 import { default as mongodb, Collection } from "mongodb";
 import { ChannelSettings, statistics } from './bot'
+import { ParanoiaData } from './Commands/paranoiaData'
 const MongoClient = mongodb.MongoClient
 
 var collections: Record<string, Collection> = {}
@@ -104,7 +105,7 @@ const functions: Record<string, Function> = {
         let returnData = result?.data;
         return returnData;
     },
-    setParanoiaData: async (id: string, value) => {
+    setParanoiaData: async (id: string, value: ParanoiaData) => {
         let collection = collections.paranoiaData
         return collection.findOneAndReplace({ "userID": id }, { "userID": id, "data": value }, { "upsert": true })
     },
