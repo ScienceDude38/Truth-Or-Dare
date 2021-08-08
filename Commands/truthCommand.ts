@@ -1,18 +1,19 @@
 export { Command, SlashCommand, Meta, Aliases };
 import { CommandInteraction, Message } from 'discord.js';
 import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { Question } from './addCommand.js';
 
-type truthCategory = "pg" | "pg13" | "r"
-export type truthQuestions = Record<truthCategory, string[]>
+export type truthCategory = "pg" | "pg13" | "r"
+export type truthQuestionList = Record<truthCategory, Question[]>
 
-let truthQuestions: truthQuestions = {
+let truthQuestions: truthQuestionList = {
     "pg": [],
     "pg13": [],
     "r": []
 };
 
 (async function() {
-    truthQuestions = <truthQuestions>await handler.getQuestions('truth')
+    truthQuestions = <truthQuestionList>await handler.getQuestions('truth')
 })()
 
 const Aliases = ["t"]
@@ -45,7 +46,7 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
             do {
                 index = Math.floor(Math.random() * truthQuestions[rating].length);
             } while (guild && questionLog[guild.id].includes(index));
-            sendMessage(message.channel, truthQuestions[rating][index]);
+            sendMessage(message.channel, truthQuestions[rating][index].text);
         }
     }
     else {
@@ -58,7 +59,7 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
                 do {
                     index = Math.floor(Math.random() * truthQuestions[category].length);
                 } while (guild && questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, truthQuestions[category][index]);
+                sendMessage(message.channel, truthQuestions[category][index].text);
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`${prefix}enable truth ${category}\``);
@@ -114,7 +115,7 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
     do {
         index = Math.floor(Math.random() * truthQuestions[rating].length);
     } while (guild && questionLog[guild.id]?.includes(index));
-    interaction.editReply(truthQuestions[rating][index])
+    interaction.editReply(truthQuestions[rating][index].text)
 
     if (guild) {
         if (!(guild.id in questionLog)) {
@@ -145,4 +146,12 @@ const Meta = {
             ]
         }
     ]
+}
+
+export function defaultTruthQuestionList() {
+    return {
+        pg: [],
+        pg13: [],
+        r: []
+    }
 }

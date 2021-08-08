@@ -8,6 +8,15 @@ ipc.config.id = "handler"
 ipc.config.retry = 15000
 ipc.config.silent = true
 
+import { dareQuestionList } from './Commands/dareCommand'
+import { nhieQuestionList } from './Commands/nhieCommand'
+import { paranoiaQuestionList } from './Commands/paranoiaCommand'
+import { truthQuestionList } from './Commands/truthCommand'
+import { wyrQuestionList } from './Commands/wyrCommand'
+
+type questions = dareQuestionList | nhieQuestionList | paranoiaQuestionList | truthQuestionList | wyrQuestionList
+type overrides = string[]
+
 ipc.serve(
     () => {
         ipc.server.on('message', async (data, socket) => {
@@ -26,6 +35,18 @@ import { ChannelSettings, statistics } from './bot'
 import { ParanoiaData } from './Commands/paranoiaData'
 const MongoClient = mongodb.MongoClient
 
+var collectionNames = [
+    "prefixes",
+    "channelSettings",
+    "serverChannels",
+    "paranoiaData",
+    "statistics",
+    "serverCounts",
+    "questions",
+    "customQuestions",
+    "questionOverrides"
+]
+
 var collections: Record<string, Collection> = {}
 
 async function initiateMongo(): Promise<boolean> {
@@ -33,7 +54,7 @@ async function initiateMongo(): Promise<boolean> {
     try {
         mongoClient.connect();
         let db = mongoClient.db("todBeta");
-        ["prefixes", "channelSettings", "serverChannels", "paranoiaData", "statistics", "serverCounts", "questions"].forEach(coll => {
+        collectionNames.forEach(coll => {
             collections[coll] = db.collection(coll)
         })
         return true;
@@ -145,11 +166,27 @@ const functions: Record<string, Function> = {
     },
     setStatistics: async (shardID: number, statistics: statistics) => {
         let collection = collections.statistics
-        return collection.findOneAndReplace({ "shardID": shardID }, { "shardID": shardID, "statistics": statistics }, {"upsert": true})
+        return collection.findOneAndReplace({ shardID }, { shardID, statistics }, {"upsert": true})
     },
     getQuestions: async (name: string) => {
         let collection = collections.questions
         return (await collection.findOne({ name })).data
+    },
+    getCustomQuestions: async (name: string, guildID: string) => {
+        let collection = collections.customQuestions
+        return (await collection.findOne({ name, guildID })).data
+    },
+    setCustomQuestions: async (name: string, guildID: string, value: questions) => {
+        let collection = collections.customQuestions
+        return collection.findOneAndReplace({ guildID, name }, { guildID, name, data: value }, {"upsert": true})
+    },
+    getOverrides: async (name: string, guildID: string) => {
+        let collection = collections.questionOverrides
+        return (await collection.findOne({ name, guildID }))
+    },
+    setOverrides: async (name: string, guildID: string, value: overrides) => {
+        let collection = collections.questionOverrides
+        return collection.findOneAndReplace({ guildID, name }, { guildID, name, data: value }, {"upsert": true})
     }
 }
 

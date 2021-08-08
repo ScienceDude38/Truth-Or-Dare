@@ -1,18 +1,19 @@
 export { Command, SlashCommand, Meta };
     import { CommandInteraction, Message } from 'discord.js';
 import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { Question } from './addCommand.js';
 
-type wyrCategory = "pg" | "pg13" | "r"
-export type wyrQuestions = Record<wyrCategory, string[]>
+export type wyrCategory = "pg" | "pg13" | "r"
+export type wyrQuestionList = Record<wyrCategory, Question[]>
 
-let wyrQuestions: wyrQuestions = {
+let wyrQuestions: wyrQuestionList = {
     "pg": [],
     "pg13": [],
     "r": []
 };
 
 (async function() {
-    wyrQuestions = <wyrQuestions>await handler.getQuestions('wyr')
+    wyrQuestions = <wyrQuestionList>await handler.getQuestions('wyr')
 })()
 
 var questionLog: Record<string, number[]> = {};
@@ -43,7 +44,7 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
             do {
                 index = Math.floor(Math.random() * wyrQuestions[rating].length);
             } while (guild && questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, wyrQuestions[rating][index]);
+            sendMessage(message.channel, wyrQuestions[rating][index].text);
         }
     }
     else {
@@ -56,7 +57,7 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
                 do {
                     index = Math.floor(Math.random() * wyrQuestions[rating].length);
                 } while (guild && questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, wyrQuestions[rating][index]);
+                sendMessage(message.channel, wyrQuestions[rating][index].text);
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`+enable wyr ${rating}\``);
@@ -112,7 +113,7 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
     do {
         index = Math.floor(Math.random() * wyrQuestions[rating].length);
     } while (guild && questionLog[guild.id]?.includes(index));
-    interaction.editReply(wyrQuestions[rating][index])
+    interaction.editReply(wyrQuestions[rating][index].text)
 
     if (guild) {
         if (!(guild?.id in questionLog) && guild) {
@@ -143,4 +144,12 @@ const Meta = {
             ]
         }
     ]
+}
+
+export function defaultWyrQuestionList() {
+    return {
+        pg: [],
+        pg13: [],
+        r: []
+    }
 }

@@ -1,19 +1,20 @@
 export { Command, SlashCommand, Meta, Aliases };
 import { CommandInteraction, Message, User } from 'discord.js';
 import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { Question } from './addCommand.js';
 import { checkUserParanoia, checkUserAns, addUser } from './paranoiaData.js';
 
-type paranoiaCategory = "pg" | "pg13" | "r"
-export type paranoiaQuestions = Record<paranoiaCategory, string[]>
+export type paranoiaCategory = "pg" | "pg13" | "r"
+export type paranoiaQuestionList = Record<paranoiaCategory, Question[]>
 
-let paranoiaQuestions: paranoiaQuestions = {
+let paranoiaQuestions: paranoiaQuestionList = {
     "pg": [],
     "pg13": [],
     "r": []
 };
 
 (async function() {
-    paranoiaQuestions = <paranoiaQuestions>await handler.getQuestions('paranoia')
+    paranoiaQuestions = <paranoiaQuestionList>await handler.getQuestions('paranoia')
 })()
 
 const Aliases = ["p"]
@@ -148,9 +149,9 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
     do {
         index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
     } while (guild && questionLog[guild.id]?.includes(index));
-    user.send(`Question from ${interaction.user.username} in ${guild!.name}: \n${paranoiaQuestions[rating][index]}\nReply with \`/ans\``)
+    user.send(`Question from ${interaction.user.username} in ${guild!.name}: \n${paranoiaQuestions[rating][index].text}\nReply with \`/ans\``)
         .then(() => {
-            addUser(user.id, guild!.id, interaction.channel!.id, paranoiaQuestions[rating][index!])
+            addUser(user.id, guild!.id, interaction.channel!.id, paranoiaQuestions[rating][index!].text)
             interaction.editReply("Paranoia question sent")
         })
         .catch((err) => {
@@ -198,11 +199,19 @@ const Meta = {
 function sendQuestionToUser(user: User, rating: paranoiaCategory, index: number, message: Message) {
     user.send(`Question from ${message.author.username} in ${message.guild!.name}: \n${paranoiaQuestions[rating][index]}\nReply with \`+ans [answer]\`.`)
         .then(() => {
-            addUser(user.id, message.guild!.id, message.channel.id, paranoiaQuestions[rating][index])
+            addUser(user.id, message.guild!.id, message.channel.id, paranoiaQuestions[rating][index].text)
             sendMessage(message.channel, "Paranoia question sent")
         })
         .catch((err) => {
             sendMessage(message.channel, "That user has their DMs set to closed.")
             console.log(err)
         });
+}
+
+export function defaultParanoiaQuestionList() {
+    return {
+        pg: [],
+        pg13: [],
+        r: []
+    }
 }

@@ -3,18 +3,19 @@ ipc.config.retry = 15000
 ipc.config.silent = true
 
 import type { ChannelSettings, statistics } from './bot'
-import { dareQuestions } from './Commands/dareCommand'
-import { nhieQuestions } from './Commands/nhieCommand'
-import { paranoiaQuestions } from './Commands/paranoiaCommand'
+import { dareQuestionList } from './Commands/dareCommand'
+import { nhieQuestionList } from './Commands/nhieCommand'
+import { paranoiaQuestionList } from './Commands/paranoiaCommand'
 import { ParanoiaData } from './Commands/paranoiaData'
-import { truthQuestions } from './Commands/truthCommand'
-import { wyrQuestions } from './Commands/wyrCommand'
+import { truthQuestionList } from './Commands/truthCommand'
+import { wyrQuestionList } from './Commands/wyrCommand'
 
 interface MongoHandler {
     handler: any
 }
 
-type questions = truthQuestions | paranoiaQuestions | nhieQuestions | dareQuestions | wyrQuestions
+type questions = truthQuestionList | paranoiaQuestionList | nhieQuestionList | dareQuestionList | wyrQuestionList
+type overrides = string[]
 
 class MongoHandler {
     async init(shardID: number) {
@@ -300,6 +301,67 @@ class MongoHandler {
 
         return await new Promise((res, rej) => {
             this.handler.once(operationID, (data: questions) => {
+                res(data)
+            })
+        })
+    }
+
+    async getCustomQuestions(name: string, guildID: string): Promise<questions> {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+
+        this.handler.emit('message', {
+            operation: "getCustomQuestions",
+            args: [name, guildID],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data: questions) => {
+                res(data)
+            })
+        })
+    }
+    async setCustomQuestions(name: string, guildID: string, value: questions) {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+
+        this.handler.emit('message', {
+            operation: "setCustomQuestions",
+            args: [name, guildID, value],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data: any) => {
+                res(data)
+            })
+        })
+    }
+    async getOverrides(name: string, guildID: string): Promise<overrides> {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+
+        this.handler.emit('message', {
+            operation: "getOverrides",
+            args: [name, guildID],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data: any) => {
+                res(data)
+            })
+        })
+    }
+    async setOverrides(name: string, guildID: string, value: overrides) {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+
+        this.handler.emit('message', {
+            operation: "setOverrides",
+            args: [name, guildID, value],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data: any) => {
                 res(data)
             })
         })

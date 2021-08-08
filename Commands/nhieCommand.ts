@@ -1,19 +1,20 @@
 export { Command, SlashCommand, Meta };
 import { CommandInteraction, Message } from 'discord.js';
 import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { Question } from './addCommand.js';
 
-type nhieCategory = "pg" | "pg13" | "r"
-export type nhieQuestions = Record<nhieCategory, string[]>
+export type nhieCategory = "pg" | "pg13" | "r"
+export type nhieQuestionList = Record<nhieCategory, Question[]>
 
 
-let nhieQuestions: nhieQuestions = {
+let nhieQuestions: nhieQuestionList = {
     "pg": [],
     "pg13": [],
     "r": []
 };
 
 (async function() {
-    nhieQuestions = <nhieQuestions>await handler.getQuestions('nhie')
+    nhieQuestions = <nhieQuestionList>await handler.getQuestions('nhie')
 })()
 
 var questionLog: Record<string, number[]> = {};
@@ -45,7 +46,7 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
             do {
                 index = Math.floor(Math.random() * nhieQuestions[rating].length);
             } while (guild && questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, nhieQuestions[rating][index]);
+            sendMessage(message.channel, nhieQuestions[rating][index].text);
         }
     }
     else {
@@ -58,7 +59,7 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
                 do {
                     index = Math.floor(Math.random() * nhieQuestions[category].length);
                 } while (guild && questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, nhieQuestions[category][index]);
+                sendMessage(message.channel, nhieQuestions[category][index].text);
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`+enable nhie ${category}\``);
@@ -114,7 +115,7 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
     do {
         index = Math.floor(Math.random() * nhieQuestions[rating].length);
     } while (guild && questionLog[guild.id]?.includes(index));
-    interaction.editReply(nhieQuestions[rating][index])
+    interaction.editReply(nhieQuestions[rating][index].text)
 
     if (guild) {
         if (!(guild.id in questionLog)) {
@@ -145,4 +146,12 @@ const Meta = {
             ]
         }
     ]
+}
+
+export function defaultNhieQuestionList() {
+    return {
+        pg: [],
+        pg13: [],
+        r: []
+    }
 }
