@@ -3,6 +3,8 @@ import { client, commandIDs } from '../bot.js'
 import * as https from 'https'
 import { CommandInteraction } from 'discord.js'
 
+type T = "disable" | "enable" | "mute" | "unmute"
+
 async function SlashCommand(interaction: CommandInteraction) {
     let { guild, user, options } = interaction
     let member = await guild!.members.fetch(user.id)
@@ -68,7 +70,7 @@ async function SlashCommand(interaction: CommandInteraction) {
         let opts = {
             host: `discord.com`,
             port: 443,
-            path: `/api/v8/applications/${client.application!.id}/guilds/${guild!.id}/commands/${commandIDs[c]}/permissions`,
+            path: `/api/v8/applications/${client.application!.id}/guilds/${guild!.id}/commands/${commandIDs[<T>c]}/permissions`,
             method: "PUT",
             headers: {
                 'Authorization': `Bot ${process.env.TOKEN}`,
