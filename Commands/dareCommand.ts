@@ -11,6 +11,9 @@ export type dareQuestionList = Record<dareCategory, Question[]>
 let dareQuestions: dareQuestionList = defaultDareQuestionList();
 
 (async function() {
+    await new Promise((res) => {
+        setTimeout(res, 5000)
+    })
     dareQuestions = <dareQuestionList>await handler.getQuestions('dare')
 })()
 

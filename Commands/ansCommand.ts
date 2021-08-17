@@ -16,7 +16,7 @@ async function Command(args: string[], message: Message) {
             if (!channelSettings) {
                 sendMessage(message.channel, "Channel to send reply to was not found")
             } else if ((Math.random() < 0.55 && channelSettings["show paranoia"] === "default") || channelSettings["show paranoia"] === "all") {
-                let channel = await client.channels.fetch(checkUser.channel)
+                let channel = await client.channels.fetch(checkUser.channel, { cache: false, force: true, allowUnknownGuild: true })
                 if (channel) {
                     (<TextBasedChannels>channel).send(`Question: ${checkUser.question}\n${message.author.username} said: ${escapeString(args.join(" "))}`).catch(() => console.log("Invalid channel ID"));
                 } else {
@@ -24,7 +24,7 @@ async function Command(args: string[], message: Message) {
                 }
             }
             else {
-                let channel = await client.channels.fetch(checkUser.channel)
+                let channel = await client.channels.fetch(checkUser.channel, { cache: false, force: true, allowUnknownGuild: true })
                 if (channel) {
                     (<TextBasedChannels>channel).send(`Question is kept secret\n${message.author.username} said: ${escapeString(args.join(" "))}`).catch(() => console.log("Invalid channel ID"));
                 } else {
@@ -49,14 +49,14 @@ async function SlashCommand(interaction: CommandInteraction) {
         if (!channelSettings) {
             interaction.editReply("Channel to send reply to was not found")
         } else if ((Math.random() < 0.55 && channelSettings["show paranoia"] === "default") || channelSettings["show paranoia"] === "all") {
-            let channel = await client.channels.fetch(checkUser.channel)
+            let channel = await client.channels.fetch(checkUser.channel, { cache: false, force: true, allowUnknownGuild: true })
             if (channel) {
                 (<TextBasedChannels>channel).send(`Question: ${checkUser.question}\n${interaction.user.username} said: ${escapeString(<string>interaction.options.get('answer')!.value)}`).catch(() => console.log("Invalid channel ID"))
             } else {
                 interaction.editReply("Channel to send reply to was not found")
             }
         } else {
-            let channel = await client.channels.fetch(checkUser.channel)
+            let channel = await client.channels.fetch(checkUser.channel, { cache: false, force: true, allowUnknownGuild: true })
             if (channel) {
                 (<TextBasedChannels>channel).send(`Question is kept secret\n${interaction.user.username} said: ${escapeString(<string>interaction.options.get('answer')!.value)}`).catch(() => console.log("Invalid channel ID"))
             } else {

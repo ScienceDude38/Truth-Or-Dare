@@ -14,6 +14,9 @@ let paranoiaQuestions: paranoiaQuestionList = {
 };
 
 (async function() {
+    await new Promise((res) => {
+        setTimeout(res, 5000)
+    })
     paranoiaQuestions = <paranoiaQuestionList>await handler.getQuestions('paranoia')
 })()
 

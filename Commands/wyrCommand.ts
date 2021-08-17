@@ -13,6 +13,9 @@ let wyrQuestions: wyrQuestionList = {
 };
 
 (async function() {
+    await new Promise((res) => {
+        setTimeout(res, 5000)
+    })
     wyrQuestions = <wyrQuestionList>await handler.getQuestions('wyr')
 })()
 

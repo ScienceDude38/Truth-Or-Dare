@@ -5,30 +5,20 @@ async function checkUserParanoia(user: string, guild: string) {
         return false;
     }
     let userData = await handler.getParanoiaData(user);
-    if (userData.some) {
+    if (Array.isArray(userData)) {
         return userData.some((a) => a.guild === guild && Date.now() - a.time < 86400000);
     }
     else {
-        if (userData) {
-            console.log('user data (p): ' + user)
-            console.dir(userData)
-
-            handler.deleteParanoiaData(user)
-        }
         return false;
     }
 }
 async function addUser(user: string, guild: string, channel: string, question: string) {
     let userData = await handler.getParanoiaData(user);
-    if (userData.push) {
+    if (Array.isArray(userData)) {
         userData.push(new ParanoiaQuestion(user, guild, channel, question));
         handler.setParanoiaData(user, userData);
     }
     else {
-        if (userData) {
-            console.log('user data (a): ' + user)
-            console.dir(userData)
-        }
         let newUserData = [ new ParanoiaQuestion(user, guild, channel, question) ]
         handler.setParanoiaData(user, newUserData);
     }

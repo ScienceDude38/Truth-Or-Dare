@@ -1,8 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
 
-import heapdump from 'heapdump'
-
 import ipc from 'node-ipc'
 ipc.config.id = "handler"
 ipc.config.retry = 15000
@@ -14,7 +12,7 @@ import { paranoiaQuestionList } from './Commands/paranoiaCommand'
 import { truthQuestionList } from './Commands/truthCommand'
 import { wyrQuestionList } from './Commands/wyrCommand'
 
-type questions = dareQuestionList | nhieQuestionList | paranoiaQuestionList | truthQuestionList | wyrQuestionList
+export type questions = dareQuestionList | nhieQuestionList | paranoiaQuestionList | truthQuestionList | wyrQuestionList
 type overrides = string[]
 
 ipc.serve(
@@ -174,7 +172,7 @@ const functions: Record<string, Function> = {
     },
     getCustomQuestions: async (name: string, guildID: string) => {
         let collection = collections.customQuestions
-        return (await collection.findOne({ name, guildID })).data
+        return (await collection.findOne({ name, guildID }))?.data
     },
     setCustomQuestions: async (name: string, guildID: string, value: questions) => {
         let collection = collections.customQuestions
@@ -182,7 +180,7 @@ const functions: Record<string, Function> = {
     },
     getOverrides: async (name: string, guildID: string) => {
         let collection = collections.questionOverrides
-        return (await collection.findOne({ name, guildID }))
+        return (await collection.findOne({ name, guildID }))?.data
     },
     setOverrides: async (name: string, guildID: string, value: overrides) => {
         let collection = collections.questionOverrides
@@ -191,12 +189,3 @@ const functions: Record<string, Function> = {
 }
 
 var prefixes: Record<string, string> = {}
-
-var dumps = 0
-setInterval(() => {
-    dumps++
-    console.log("handler " + process.memoryUsage().heapUsed)
-    heapdump.writeSnapshot("/root/dumps/handler_dump_" + dumps + ".heapsnapshot", () => {
-        console.log("Heap written")
-    })
-}, 200000)

@@ -13,6 +13,9 @@ let truthQuestions: truthQuestionList = {
 };
 
 (async function() {
+    await new Promise((res) => {
+        setTimeout(res, 5000)
+    })
     truthQuestions = <truthQuestionList>await handler.getQuestions('truth')
 })()
 
@@ -45,7 +48,7 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
                 index = Math.floor(Math.random() * truthQuestions[rating].length);
-            } while (guild && questionLog[guild.id].includes(index));
+            } while (guild && questionLog[guild.id]?.includes(index));
             sendMessage(message.channel, truthQuestions[rating][index].text);
         }
     }

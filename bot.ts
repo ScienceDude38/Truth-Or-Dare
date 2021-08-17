@@ -1,9 +1,7 @@
-import Discord, { ClientOptions, Collection, CommandInteraction, GuildChannel, Message, TextBasedChannels, TextChannel } from 'discord.js'
+import Discord, { Options, ClientOptions, Collection, CommandInteraction, GuildChannel, Message, TextBasedChannels, TextChannel, MessageEmbed } from 'discord.js'
 
 import dotenv from 'dotenv'
 dotenv.config()
-
-import heapdump from 'heapdump'
 
 export type statistics = { 
     timeCreated: number, 
@@ -47,7 +45,7 @@ class CustomClient extends Discord.Client {
 }
 
 const client: CustomClient = new CustomClient({
-    makeCache: Discord.Options.cacheWithLimits({
+    makeCache: Options.cacheWithLimits({
         ApplicationCommandManager: 0,
         BaseGuildEmojiManager: 0,
         GuildBanManager: 0,
@@ -71,7 +69,7 @@ const client: CustomClient = new CustomClient({
     intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"]
 }, new Discord.Collection(), new Discord.Collection(), { "timeCreated": Date.now(), "truth": 0, "dare": 0, "wyr": 0, "nhie": 0, "paranoia": 0, "serversJoined": 0, "serversLeft": 0 });
 
-import topgg from '@top-gg/sdk'
+import * as topgg from '@top-gg/sdk'
 const topggAPI = new topgg.Api(process.env.TOPGG!);
 
 import fs from 'fs'
@@ -123,7 +121,7 @@ handler.init(client.shard!.ids[0]).then(async () => {
     let paranoiaQuestions = <paranoiaQuestionList>await handler.getQuestions("paranoia")
     client.numberParanoias = paranoiaQuestions.pg.length + paranoiaQuestions.pg13.length + paranoiaQuestions.r.length
 
-    client.login(process.env.TOKEN)
+    client.login(process.env.TOKEN).catch(console.log)
 })
 
 import * as commandIDs from './commandIDs.json'
@@ -229,34 +227,38 @@ client.on('channelDelete', async (channel) => {
     }
 });
 
-client.on('interaction', async (interaction) => {
+client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
-    const { channel, guild, commandName } = interaction
+    const { channelId, guild, commandName } = interaction
 
     if (guild) {
-        let channelSettings = channel ? await handler.getChannelSettings(channel.id) : undefined
+        let channelSettings = channelId ? await handler.getChannelSettings(channelId) : undefined
 
-        if (!channelSettings && channel && guild) {
+        if ((!channelSettings || Object.keys(channelSettings).length === 0) && channelId && guild) {
             console.log("Unindexed channel")
 
-            channelSettings = (<TextChannel>channel).nsfw ? rRatedSettings : defaultSettings
+            channelSettings = defaultSettings
 
-            let serverChannels = [...await handler.getServerChannels(guild.id), channel.id]
-            handler.setChannelSettings(channel.id, channelSettings);
+            let oldServerChannels = await handler.getServerChannels(guild.id)
+            if (!Array.isArray(oldServerChannels)) {
+                oldServerChannels = []
+            }
+            let serverChannels = [...oldServerChannels, channelId]
+            handler.setChannelSettings(channelId, channelSettings);
             handler.setServerChannels(guild.id, serverChannels)
         }
 
         if (client.slashCommands.has(commandName) && commandName !== "ans") {
-            interaction.defer()
+            await interaction.deferReply()
             client.slashCommands.get(commandName)!(interaction, channelSettings);
         }
     } else if (dmCommands.includes(commandName)) {
-        interaction.defer()
+        await interaction.deferReply()
         client.slashCommands.get(commandName)!(interaction, dmSettings)
     }
 });
 
-client.on('message', async (message) => {
+client.on('messageCreate', async (message) => {
     if (message.author.bot || (message.channel.type !== "GUILD_TEXT" && message.channel.type !== "DM")) {
         return;
     }
@@ -273,7 +275,7 @@ client.on('message', async (message) => {
         if (message.content.startsWith(prefix)) {
             let channelSettings = await handler.getChannelSettings(channel.id);
 
-            if (!channelSettings && channel && guild) {
+            if ((!channelSettings || Object.keys(channelSettings).length === 0) && channel && guild) {
                 console.log("Unindexed channel");
 
                 channelSettings = (<TextChannel>channel).nsfw ? rRatedSettings : defaultSettings
@@ -292,7 +294,9 @@ client.on('message', async (message) => {
                     .setTitle("Links")
                     .addField('\u200B', 'Enjoying the bot? Make sure to [give feedback](https://truthordarebot.xyz/feedback) and [suggest questions](https://truthordarebot.xyz/question_submit).')
                     .setTimestamp();
-                sendMessage(channel, linkEmbed);
+                sendMessage(channel, {
+                    embeds: [linkEmbed]
+                });
             }
         }
     }
@@ -335,14 +339,11 @@ async function processCommand(message: Message, channelSettings: ChannelSettings
 }
 
 function sendMessage(channel: TextBasedChannels, messageContent: any) {
-    channel.send(messageContent).catch(() => { console.log("Missing permissions"); });
+    if (messageContent instanceof MessageEmbed) {
+        channel.send({
+            embeds: [messageContent]
+        }).catch(() => { console.log("Missing permissions") })
+    } else {
+        channel.send(messageContent).catch(() => { console.log("Missing permissions"); });
+    }
 }
-
-// var dumps = 0
-// setInterval(() => {
-//     dumps++
-//     console.log(client.shard.ids[0] + " " + process.memoryUsage().heapUsed)
-//     heapdump.writeSnapshot("/root/dumps/" + client.shard.ids[0] + "_dump_" + dumps + ".heapsnapshot", () => {
-//         console.log("Heap written")
-//     })
-// }, 200000)
