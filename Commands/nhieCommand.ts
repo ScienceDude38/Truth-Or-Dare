@@ -1,6 +1,6 @@
 export { Command, SlashCommand, Meta };
-import { CommandInteraction, Message } from 'discord.js';
-import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { CommandInteraction, Message, TextBasedChannels } from 'discord.js';
+import { ChannelSettings, ChannelSetting, handler, sendMessage, Discord } from '../bot.js';
 import { Question } from './addCommand.js';
 
 export type nhieCategory = "pg" | "pg13" | "r"
@@ -20,11 +20,21 @@ let nhieQuestions: nhieQuestionList = {
     nhieQuestions = <nhieQuestionList>await handler.getQuestions('nhie')
 })()
 
-var questionLog: Record<string, number[]> = {};
+var questionLog: Record<string, string[]> = {};
 
-function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
+async function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
     var index: number | null = null;
+    var sentQuestionID: string | null = null
     var { guild } = message;
+
+    let customQuestions: nhieQuestionList = guild ? <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id) : defaultNhieQuestionList()
+    if (!customQuestions || Object.keys(customQuestions).length === 0) {
+        customQuestions = defaultNhieQuestionList()
+    }
+    let overrides = guild ? await handler.getOverrides("nhie", guild!.id) : []
+    if (!Array.isArray(overrides)) {
+        overrides = []
+    }
     if (!channelSettings) return
 
     if (args.length > 1) {
@@ -46,10 +56,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         }
         else {
             let rating = categories[Math.floor(Math.random() * categories.length)];
+            let questions = [...nhieQuestions[rating].filter(x => !overrides.includes(x.id)), ...customQuestions[rating]]
             do {
-                index = Math.floor(Math.random() * nhieQuestions[rating].length);
-            } while (guild && questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, nhieQuestions[rating][index].text);
+                index = Math.floor(Math.random() * questions.length);
+            } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+            sendQuestion(message.channel, questions[index]);
+            sentQuestionID = questions[index].id
         }
     }
     else {
@@ -59,10 +71,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         else {
             let category = <nhieCategory>args[0]
             if (channelSettings[<ChannelSetting>("nhie " + category)]) {
+                let questions = [...nhieQuestions[category].filter(x => !overrides.includes(x.id)), ...customQuestions[category]]
                 do {
-                    index = Math.floor(Math.random() * nhieQuestions[category].length);
-                } while (guild && questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, nhieQuestions[category][index].text);
+                    index = Math.floor(Math.random() * questions.length);
+                } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+                sendQuestion(message.channel, questions[index]);
+                sentQuestionID = questions[index].id
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`+enable nhie ${category}\``);
@@ -77,15 +91,24 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         if (questionLog[guild?.id]?.length > 30) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
 
-function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
-    var index
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
+    var index: number | null = null
+    var sentQuestionID: string | null = null
     var { guild, options } = interaction
+    let customQuestions: nhieQuestionList = guild ? <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id) : defaultNhieQuestionList()
+    if (!customQuestions || Object.keys(customQuestions).length === 0) {
+        customQuestions = defaultNhieQuestionList()
+    }
+    let overrides = guild ? await handler.getOverrides("nhie", guild!.id) : []
+    if (!Array.isArray(overrides)) {
+        overrides = []
+    }
 
     var rating: nhieCategory
     if (options.data.some(o => o.name === 'rating')) {
@@ -115,10 +138,12 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
         }
     }
 
+    let questions = [...nhieQuestions[rating].filter(x => !overrides.includes(x.id)), ...customQuestions[rating]]
     do {
-        index = Math.floor(Math.random() * nhieQuestions[rating].length);
-    } while (guild && questionLog[guild.id]?.includes(index));
-    interaction.editReply(nhieQuestions[rating][index].text)
+        index = Math.floor(Math.random() * questions.length);
+    } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+    sendQuestionSlash(interaction, questions[index])
+    sentQuestionID = questions[index].id
 
     if (guild) {
         if (!(guild.id in questionLog)) {
@@ -127,8 +152,8 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
         if (questionLog[guild.id]?.length > 30) {
             questionLog[guild.id].shift();
         }
-        if (index !== undefined) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== undefined) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
@@ -157,4 +182,19 @@ export function defaultNhieQuestionList() {
         pg13: [],
         r: []
     }
+}
+
+function sendQuestion(channel: TextBasedChannels, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .addField(question.text, question.id)
+    sendMessage(channel, questionEmbed)
+}
+
+function sendQuestionSlash(interaction: CommandInteraction, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .setTitle(question.text)
+        .setFooter(question.id)
+    interaction.editReply({
+        embeds: [questionEmbed]
+    })
 }

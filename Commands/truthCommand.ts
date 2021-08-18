@@ -1,6 +1,6 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { CommandInteraction, Message } from 'discord.js';
-import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { CommandInteraction, Message, TextBasedChannels } from 'discord.js';
+import { ChannelSettings, ChannelSetting, handler, sendMessage, Discord } from '../bot.js';
 import { Question } from './addCommand.js';
 
 export type truthCategory = "pg" | "pg13" | "r"
@@ -21,12 +21,23 @@ let truthQuestions: truthQuestionList = {
 
 const Aliases = ["t"]
 
-var questionLog: Record<string, number[]> = {};
+var questionLog: Record<string, string[]> = {};
 
-function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
+async function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
     var index: number | null = null;
+    var sentQuestionID: string | null = null
     var { guild } = message;
+
+    let customQuestions: truthQuestionList = guild ? <truthQuestionList>await handler.getCustomQuestions("truth", guild!.id) : defaultTruthQuestionList()
+    if (!customQuestions || Object.keys(customQuestions).length === 0) {
+        customQuestions = defaultTruthQuestionList()
+    }
+    let overrides = guild ? await handler.getOverrides("truth", guild!.id) : []
+    if (!Array.isArray(overrides)) {
+        overrides = []
+    }
     if (!channelSettings) return
+
     if (args.length > 1) {
         sendMessage(message.channel, "You can only specify one rating (pg, pg13, or r).");
     }
@@ -46,10 +57,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         }
         else {
             let rating = categories[Math.floor(Math.random() * categories.length)];
+            let questions = [...truthQuestions[rating].filter(x => !overrides.includes(x.id)), ...customQuestions[rating]]
             do {
-                index = Math.floor(Math.random() * truthQuestions[rating].length);
-            } while (guild && questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, truthQuestions[rating][index].text);
+                index = Math.floor(Math.random() * questions.length);
+            } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+            sendQuestion(message.channel, questions[index]);
+            sentQuestionID = questions[index].id
         }
     }
     else {
@@ -59,10 +72,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         else {
             let category = <truthCategory>args[0]
             if (channelSettings[<ChannelSetting>("truth " + category)]) {
+                let questions = [...truthQuestions[category].filter(x => !overrides.includes(x.id)), ...customQuestions[category]]
                 do {
-                    index = Math.floor(Math.random() * truthQuestions[category].length);
-                } while (guild && questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, truthQuestions[category][index].text);
+                    index = Math.floor(Math.random() * questions.length);
+                } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+                sendQuestion(message.channel, questions[index]);
+                sentQuestionID = questions[index].id
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`${prefix}enable truth ${category}\``);
@@ -77,15 +92,25 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         if (questionLog[guild.id]?.length > 50) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
 
-function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
     var index: number | null = null
+    var sentQuestionID: string | null = null
     var { guild, options } = interaction
+
+    let customQuestions: truthQuestionList = guild ? <truthQuestionList>await handler.getCustomQuestions("truth", guild!.id) : defaultTruthQuestionList()
+    if (!customQuestions || Object.keys(customQuestions).length === 0) {
+        customQuestions = defaultTruthQuestionList()
+    }
+    let overrides = guild ? await handler.getOverrides("truth", guild!.id) : []
+    if (!Array.isArray(overrides)) {
+        overrides = []
+    }
 
     var rating: truthCategory
     if (options.data.some(o => o.name === 'rating')) {
@@ -115,10 +140,12 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
         }
     }
 
+    let questions = [...truthQuestions[rating].filter(x => !overrides.includes(x.id)), ...customQuestions[rating]]
     do {
-        index = Math.floor(Math.random() * truthQuestions[rating].length);
-    } while (guild && questionLog[guild.id]?.includes(index));
-    interaction.editReply(truthQuestions[rating][index].text)
+        index = Math.floor(Math.random() * questions.length);
+    } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+    sendQuestionSlash(interaction, questions[index])
+    sentQuestionID = questions[index].id
 
     if (guild) {
         if (!(guild.id in questionLog)) {
@@ -127,8 +154,8 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
         if (questionLog[guild.id]?.length > 50) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
@@ -157,4 +184,19 @@ export function defaultTruthQuestionList() {
         pg13: [],
         r: []
     }
+}
+
+function sendQuestion(channel: TextBasedChannels, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .addField(question.text, question.id)
+    sendMessage(channel, questionEmbed)
+}
+
+function sendQuestionSlash(interaction: CommandInteraction, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .setTitle(question.text)
+        .setFooter(question.id)
+    interaction.editReply({
+        embeds: [questionEmbed]
+    })
 }

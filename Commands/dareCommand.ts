@@ -1,6 +1,6 @@
 export { Command, SlashCommand, Meta, Aliases };
-import { CommandInteraction, Message } from 'discord.js';
-import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { CommandInteraction, Message, TextBasedChannels, TextChannel } from 'discord.js';
+import { ChannelSettings, ChannelSetting, handler, sendMessage, Discord } from '../bot.js';
 import { Question } from './addCommand.js';
 
 type dareRating = "pg" | "pg13" | "r"
@@ -19,11 +19,21 @@ let dareQuestions: dareQuestionList = defaultDareQuestionList();
 
 const Aliases = ["d"]
 
-var questionLog: Record<string, number[]> = {};
+var questionLog: Record<string, string[]> = {};
 
-function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
+async function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
     var index: number | null = null;
+    var sentQuestionID: string | null = null
     var { guild } = message;
+    let customQuestions: dareQuestionList = guild ? <dareQuestionList>await handler.getCustomQuestions("dare", guild!.id) : defaultDareQuestionList()
+    if (!customQuestions || Object.keys(customQuestions).length === 0) {
+        customQuestions = defaultDareQuestionList()
+    }
+    let overrides = guild ? await handler.getOverrides("dare", guild!.id) : []
+    if (!Array.isArray(overrides)) {
+        overrides = []
+    }
+
     if (args.length > 2) {
         sendMessage(message.channel, "You can only specify one rating (pg, pg13, r) and/or one type (d, irl).");
     }
@@ -56,10 +66,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         }
         else {
             let category = categories[Math.floor(Math.random() * categories.length)];
+            let questions = [...dareQuestions[category].filter(x => !overrides.includes(x.id)), ...customQuestions[category]]
             do {
-                index = Math.floor(Math.random() * dareQuestions[category].length);
-            } while (guild && questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, dareQuestions[category][index].text);
+                index = Math.floor(Math.random() * questions.length);
+            } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+            sendQuestion(message.channel, questions[index]);
+            sentQuestionID = questions[index].id
         }
     }
     else if (args.length === 1) {
@@ -79,10 +91,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
                     }
                     if (types.length > 0) {
                         let type = types[Math.floor(Math.random() * types.length)];
+                        let questions = [...dareQuestions[<dareCategory>(rating + "_" + type)].filter(x => !overrides.includes(x.id)), ...customQuestions[<dareCategory>(rating + "_" + type)]]
                         do {
-                            index = Math.floor(Math.random() * dareQuestions[<dareCategory>(rating + "_" + type)].length);
-                        } while (guild && questionLog[guild.id]?.includes(index));
-                        sendMessage(message.channel, dareQuestions[<dareCategory>(rating + "_" + type)][index]);
+                            index = Math.floor(Math.random() * questions.length);
+                        } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+                        sendQuestion(message.channel, questions[index]);
+                        sentQuestionID = questions[index].id
                     }
                     else {
                         sendMessage(message.channel, `Dare questions are disabled here. To enable them, use \`${prefix}enable dare\``);
@@ -106,10 +120,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
                     }
                     if (ratings.length > 0) {
                         let rating = ratings[Math.floor(Math.random() * ratings.length)];
+                        let questions = [...dareQuestions[<dareCategory>(rating + "_" + type)].filter(x => !overrides.includes(x.id)), ...customQuestions[<dareCategory>(rating + "_" + type)]]
                         do {
-                            index = Math.floor(Math.random() * dareQuestions[<dareCategory>(rating + "_" + type)].length);
-                        } while (guild && questionLog[guild.id]?.includes(index));
-                        sendMessage(message.channel, dareQuestions[<dareCategory>(rating + "_" + type)][index].text);
+                            index = Math.floor(Math.random() * questions.length);
+                        } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+                        sendQuestion(message.channel, questions[index]);
+                        sentQuestionID = questions[index].id
                     }
                     else {
                         sendMessage(message.channel, `Dare questions are disabled here. To enable them, use \`${prefix}enable dare\``);
@@ -151,10 +167,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
                 sendMessage(message.channel, `That type is disabled here. To enable it, use \`${prefix}enable dare ${type}\``);
             }
             else {
+                let questions = [...dareQuestions[<dareCategory>(rating + "_" + type)].filter(x => !overrides.includes(x.id)), ...customQuestions[<dareCategory>(rating + "_" + type)]]
                 do {
-                    index = Math.floor(Math.random() * dareQuestions[<dareCategory>(rating + "_" + type)].length);
-                } while (guild && questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, dareQuestions[<dareCategory>(rating + "_" + type)][index].text);
+                    index = Math.floor(Math.random() * questions.length);
+                } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+                sendQuestion(message.channel, questions[index]);
+                sentQuestionID = questions[index].id
             }
         }
     }
@@ -166,17 +184,26 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         if (questionLog[guild.id]?.length > 15) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID!== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
 
-function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
     var index: number | null = null;
+    var sentQuestionID: string | null = null
     var { guild, options } = interaction
 
     var rating, type
+    let customQuestions: dareQuestionList = guild ? <dareQuestionList>await handler.getCustomQuestions("dare", guild!.id) : defaultDareQuestionList()
+    if (!customQuestions || Object.keys(customQuestions).length === 0) {
+        customQuestions = defaultDareQuestionList()
+    }
+    let overrides = guild ? await handler.getOverrides("dare", guild!.id) : []
+    if (!Array.isArray(overrides)) {
+        overrides = []
+    }
 
     if (options.data.some(o => o.name === 'rating')) {
         if (!channelSettings[<ChannelSetting>("dare " + options.get('rating')!.value)]) {
@@ -229,10 +256,12 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
         }
     }
 
+    let questions = [...dareQuestions[<dareCategory>(rating + "_" + type)].filter(x => !overrides.includes(x.id)), ...customQuestions[<dareCategory>(rating + "_" + type)]]
     do {
-        index = Math.floor(Math.random() * dareQuestions[<dareCategory>(rating + "_" + type)].length);
-    } while (guild && questionLog[guild.id]?.includes(index));
-    interaction.editReply(dareQuestions[<dareCategory>(rating + "_" + type)][index].text)
+        index = Math.floor(Math.random() * questions.length);
+    } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+    sendQuestionSlash(interaction, questions[index])
+    sentQuestionID = questions[index].id
     
     if (guild) {
         if (!(guild?.id in questionLog)) {
@@ -241,8 +270,8 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
         if (questionLog[guild?.id]?.length > 15) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
@@ -284,4 +313,19 @@ export function defaultDareQuestionList(): dareQuestionList {
         "r_d": [],
         "r_irl": []
     }
+}
+
+function sendQuestion(channel: TextBasedChannels, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .addField(question.text, question.id)
+    sendMessage(channel, questionEmbed)
+}
+
+function sendQuestionSlash(interaction: CommandInteraction, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .setTitle(question.text)
+        .setFooter(question.id)
+    interaction.editReply({
+        embeds: [questionEmbed]
+    })
 }
