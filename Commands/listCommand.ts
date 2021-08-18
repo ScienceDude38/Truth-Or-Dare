@@ -14,16 +14,11 @@ export { SlashCommand, Meta }
 async function SlashCommand(interaction: CommandInteraction) {
     let { options, guild } = interaction
 
-    let truth = options.get('truth')
-    let dare = options.get('dare')
-    let wyr = options.get('wyr')
-    let nhie = options.get('nhie')
-    let paranoia = options.get('paranoia')
+    let subcommand = options.getSubcommand()
 
-    let subCommandOptions = truth?.options || dare?.options || wyr?.options || nhie?.options || paranoia?.options
-    let rating = subCommandOptions!.find(x => x.name === "rating")?.value
-    let type = subCommandOptions!.find(x => x.name === "type")?.value
-    let page = <number>subCommandOptions!.find(x => x.name === "page")?.value || 0
+    let rating = options.get('rating')?.value
+    let type = options.get('type')?.value
+    let page = <number>options.get('page')?.value || 0
 
     function sendPage<T extends Record<string, Question[]>>(customQuestions: T, index: keyof T, typeLabel: string) {
         let questionArray = customQuestions[index]
@@ -72,10 +67,10 @@ async function SlashCommand(interaction: CommandInteraction) {
         })
     } 
 
-    if (dare?.options) {
+    if (subcommand === "dare") {
         let customQuestions = <dareQuestionList>await handler.getCustomQuestions("dare", guild!.id)
 
-        if (!customQuestions) {
+        if (!customQuestions || Object.keys(customQuestions).length === 0) {
             customQuestions = defaultDareQuestionList()
         }
 
@@ -84,10 +79,10 @@ async function SlashCommand(interaction: CommandInteraction) {
         } else {
             sendSummary(customQuestions, "Dare")
         }
-    } else if (truth?.options) {
+    } else if (subcommand === "truth") {
         let customQuestions = <truthQuestionList>await handler.getCustomQuestions("truth", guild!.id)
 
-        if (!customQuestions) {
+        if (!customQuestions || Object.keys(customQuestions).length === 0) {
             customQuestions = defaultTruthQuestionList()
         }
 
@@ -96,10 +91,10 @@ async function SlashCommand(interaction: CommandInteraction) {
         } else {
             sendSummary(customQuestions, "Truth")
         }
-    } else if (wyr?.options) {
+    } else if (subcommand === "wyr") {
         let customQuestions = <wyrQuestionList>await handler.getCustomQuestions("wyr", guild!.id)
 
-        if (!customQuestions) {
+        if (!customQuestions || Object.keys(customQuestions).length === 0) {
             customQuestions = defaultWyrQuestionList()
         }
 
@@ -108,10 +103,10 @@ async function SlashCommand(interaction: CommandInteraction) {
         } else {
             sendSummary(customQuestions, "Would You Rather")
         }
-    } else if (nhie?.options) {
+    } else if (subcommand === "nhie") {
         let customQuestions = <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id)
 
-        if (!customQuestions) {
+        if (!customQuestions || Object.keys(customQuestions).length === 0) {
             customQuestions = defaultNhieQuestionList()
         }
 
@@ -120,10 +115,10 @@ async function SlashCommand(interaction: CommandInteraction) {
         } else {
             sendSummary(customQuestions, "Never Have I Ever")
         }
-    } else if (paranoia?.options) {
+    } else if (subcommand === "paranoia") {
         let customQuestions = <paranoiaQuestionList>await handler.getCustomQuestions("paranoia", guild!.id)
 
-        if (!customQuestions) {
+        if (!customQuestions || Object.keys(customQuestions).length === 0) {
             customQuestions = defaultParanoiaQuestionList()
         }
 
@@ -133,7 +128,7 @@ async function SlashCommand(interaction: CommandInteraction) {
             sendSummary(customQuestions, "Paranoia")
         }
     } else {
-        interaction.reply("Command not recognized")
+        interaction.editReply("Command not recognized")
     }
 }
 

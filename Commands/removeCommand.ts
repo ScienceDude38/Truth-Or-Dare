@@ -1,5 +1,6 @@
 import { CommandInteraction } from "discord.js";
 import { handler } from "../bot";
+import { questions } from "../mongodbHandler";
 import { Question } from "./addCommand";
 
 import { dareCategory, dareQuestionList, defaultDareQuestionList } from './dareCommand'
@@ -15,16 +16,11 @@ export { SlashCommand, Meta }
 async function SlashCommand(interaction: CommandInteraction) {
     let { guild, options } = interaction
 
-    let truth = options.get('truth')
-    let dare = options.get('dare')
-    let wyr = options.get('wyr')
-    let nhie = options.get('nhie')
-    let paranoia = options.get('paranoia')
+    let subcommand = options.getSubcommand()
 
-    let subCommandOptions = truth?.options || dare?.options || wyr?.options || nhie?.options || paranoia?.options
-    let id = <string>subCommandOptions!.find(x => x.name === "id")!.value
+    let id = <string>options.get('id')!.value
 
-    function removeCustomQuestion<T extends Record<string, Question[]>>(customQuestions: T, id: string, commandName: string) {
+    function removeCustomQuestion<T extends Record<string, Question[]>>(customQuestions: T, id: string, commandName: string, command: string) {
         let removed = null
         for (let category in customQuestions) {
             if (customQuestions[<keyof T>category].some(q => q.id === id)) {
@@ -35,6 +31,7 @@ async function SlashCommand(interaction: CommandInteraction) {
         }
         
         if (removed) {
+            handler.setCustomQuestions(command, guild!.id, <questions><unknown>customQuestions)
             interaction.editReply(`Question ${removed.id}: ${removed.text} has been removed from the list of ${commandName} questions`)
         } else {
             interaction.editReply(`No question was found with ID ${id}`)
@@ -57,6 +54,9 @@ async function SlashCommand(interaction: CommandInteraction) {
     async function override(command: string) {
         let questions = await handler.getQuestions(command)
         let overrides = await handler.getOverrides(command, guild!.id)
+        if (!Array.isArray(overrides)) {
+            overrides = []
+        }
 
         let result = getNewOverrides(questions, overrides, id)
         if (typeof result === "string") {
@@ -68,59 +68,59 @@ async function SlashCommand(interaction: CommandInteraction) {
     }
 
     if (id.length === 8) {
-        if (truth) {
+        if (subcommand === "truth") {
             let customQuestions = <truthQuestionList>await handler.getCustomQuestions("truth", guild!.id)
 
-            if (!customQuestions) {
+            if (!customQuestions || Object.keys(customQuestions).length === 0) {
                 customQuestions = defaultTruthQuestionList()
             }
             
-            removeCustomQuestion(customQuestions, id, "truth")
-        } else if (dare) {
+            removeCustomQuestion(customQuestions, id, "truth", "truth")
+        } else if (subcommand === "dare") {
             let customQuestions = <dareQuestionList>await handler.getCustomQuestions("dare", guild!.id)
 
-            if (!customQuestions) {
+            if (!customQuestions || Object.keys(customQuestions).length === 0) {
                 customQuestions = defaultDareQuestionList()
             }
 
-            removeCustomQuestion(customQuestions, id, "dare")
-        } else if (wyr) {
+            removeCustomQuestion(customQuestions, id, "dare", "dare")
+        } else if (subcommand === "wyr") {
             let customQuestions = <wyrQuestionList>await handler.getCustomQuestions("wyr", guild!.id)
 
-            if (!customQuestions) {
+            if (!customQuestions || Object.keys(customQuestions).length === 0) {
                 customQuestions = defaultWyrQuestionList()
             }
 
-            removeCustomQuestion(customQuestions, id, "Would You Rather")
-        } else if (nhie) {
+            removeCustomQuestion(customQuestions, id, "Would You Rather", "wyr")
+        } else if (subcommand === "nhie") {
             let customQuestions = <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id)
 
-            if (!customQuestions) {
+            if (!customQuestions || Object.keys(customQuestions).length === 0) {
                 customQuestions = defaultNhieQuestionList()
             }
 
-            removeCustomQuestion(customQuestions, id, "Never Have I Ever")
-        } else if (paranoia) {
+            removeCustomQuestion(customQuestions, id, "Never Have I Ever", "nhie")
+        } else if (subcommand === "paranoia") {
             let customQuestions = <paranoiaQuestionList>await handler.getCustomQuestions("paranoia", guild!.id)
 
-            if (!customQuestions) {
+            if (!customQuestions || Object.keys(customQuestions).length === 0) {
                 customQuestions = defaultParanoiaQuestionList()
             }
 
-            removeCustomQuestion(customQuestions, id, "paranoia")
+            removeCustomQuestion(customQuestions, id, "paranoia", "paranoia")
         } else {
             interaction.editReply("Command not recognized")
         }
     } else if (id.length === 5) {
-        if (truth && id[0] === "T") {
+        if (subcommand === "truth" && id[0] === "T") {
             override("truth")
-        } else if (dare && id[0] === "D") {
+        } else if (subcommand === "dare" && id[0] === "D") {
             override("dare")
-        } else if (wyr && id[0] === "W") {
+        } else if (subcommand === "wyr" && id[0] === "W") {
             override("wyr")
-        } else if (nhie && id[0] === "N") {
+        } else if (subcommand === "nhie" && id[0] === "N") {
             override("nhie")
-        } else if (paranoia && id[0] === "P") {
+        } else if (subcommand === "paranoia" && id[0] === "P") {
             override("paranoia")
         }
     } else {

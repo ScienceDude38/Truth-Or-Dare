@@ -80,7 +80,7 @@ async function SlashCommand(interaction: CommandInteraction) {
             guild: guild!
         })
         interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
-    } else if (command === "add/remove") {
+    } else if (command === "add/remove/readd") {
         await client.application!.commands.permissions.add({
             command: commandIDs["add"],
             permissions: [
@@ -94,6 +94,17 @@ async function SlashCommand(interaction: CommandInteraction) {
         })
         await client.application!.commands.permissions.add({
             command: commandIDs["remove"],
+            permissions: [
+                {
+                    id: role!.id,
+                    type: "ROLE",
+                    permission: options.getSubcommand() === "set"
+                }
+            ],
+            guild: guild!
+        })
+        await client.application!.commands.permissions.add({
+            command: commandIDs["readd"],
             permissions: [
                 {
                     id: role!.id,
@@ -130,7 +141,7 @@ const Meta = {
                         { name: "enable/disable", value: "enable/disable" },
                         { name: "mute/unmute", value: "mute/unmute" },
                         { name: "showparanoia", value: "showparanoia" },
-                        { name: "add/remove", value: "add/remove" }
+                        { name: "add/remove/readd", value: "add/remove/readd" }
                     ],
                     required: true
                 }
