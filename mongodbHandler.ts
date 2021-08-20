@@ -1,8 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
 
-import heapdump from 'heapdump'
-
 import ipc from 'node-ipc'
 ipc.config.id = "handler"
 ipc.config.retry = 15000
@@ -155,11 +153,6 @@ const functions: Record<string, Function> = {
 
 var prefixes: Record<string, string> = {}
 
-var dumps = 0
 setInterval(() => {
-    dumps++
     console.log("handler " + process.memoryUsage().heapUsed)
-    heapdump.writeSnapshot("/root/dumps/handler_dump_" + dumps + ".heapsnapshot", () => {
-        console.log("Heap written")
-    })
 }, 200000)

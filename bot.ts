@@ -1,9 +1,7 @@
-import Discord, { ClientOptions, Collection, CommandInteraction, GuildChannel, Message, TextBasedChannels, TextChannel } from 'discord.js'
+import Discord, { Options, ClientOptions, Collection, CommandInteraction, GuildChannel, Message, TextBasedChannels, TextChannel, MessageEmbed } from 'discord.js'
 
 import dotenv from 'dotenv'
 dotenv.config()
-
-import heapdump from 'heapdump'
 
 export type statistics = { 
     timeCreated: number, 
@@ -19,6 +17,11 @@ export type statistics = {
 export type ChannelSetting = "muted?" | "truth pg" | "truth pg13" | "truth r" | "dare pg" | "dare pg13" | "dare r" | "dare d" | "dare irl" | "wyr pg" | "wyr pg13" | "wyr r" | "nhie pg" | "nhie pg13" | "nhie r" | "paranoia pg" | "paranoia pg13" | "paranoia r" | "show paranoia"
 export type ChannelSettings = {
     [key in ChannelSetting]: key extends "show paranoia" ? string : boolean
+}
+
+export type Question = {
+    text: string,
+    id: string
 }
 
 interface CustomClient extends Discord.Client {
@@ -47,7 +50,7 @@ class CustomClient extends Discord.Client {
 }
 
 const client: CustomClient = new CustomClient({
-    makeCache: Discord.Options.cacheWithLimits({
+    makeCache: Options.cacheWithLimits({
         ApplicationCommandManager: 0,
         BaseGuildEmojiManager: 0,
         GuildBanManager: 0,
@@ -71,14 +74,14 @@ const client: CustomClient = new CustomClient({
     intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"]
 }, new Discord.Collection(), new Discord.Collection(), { "timeCreated": Date.now(), "truth": 0, "dare": 0, "wyr": 0, "nhie": 0, "paranoia": 0, "serversJoined": 0, "serversLeft": 0 });
 
-import topgg from '@top-gg/sdk'
+import * as topgg from '@top-gg/sdk'
 const topggAPI = new topgg.Api(process.env.TOPGG!);
 
 import fs from 'fs'
 
-export const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
-const rRatedSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" };
-const dmSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": true, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": false, "paranoia pg13": false, "paranoia r": false, "show paranoia": "default" }; 
+export const defaultSettings = () => { return { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" }}
+export const rRatedSettings = () => {return { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" }}
+const dmSettings = () => {return { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": true, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": false, "paranoia pg13": false, "paranoia r": false, "show paranoia": "default" }} 
 const dmCommands = ['ans', 'a', 'truth', 't', 'dare', 'd', 'wyr', 'nhie', 'help', 'h', 'clear', '', 'links', 'link', 'vote', 'invite', 'ping', 'random', 'shard', 'stats', 's']
 var channelTime: Record<string, number> = {};
 
@@ -123,7 +126,7 @@ handler.init(client.shard!.ids[0]).then(async () => {
     let paranoiaQuestions = <paranoiaQuestions>await handler.getQuestions("paranoia")
     client.numberParanoias = paranoiaQuestions.pg.length + paranoiaQuestions.pg13.length + paranoiaQuestions.r.length
 
-    client.login(process.env.TOKEN)
+    client.login(process.env.TOKEN).catch(console.log)
 })
 
 import * as commandIDs from './commandIDs.json'
@@ -166,9 +169,9 @@ client.on('guildCreate', async (guild) => {
         .forEach(c => {
             serverChannels.push(c.id)
             if ((<TextChannel>c).nsfw) { 
-                handler.setChannelSettings(c.id, rRatedSettings)
+                handler.setChannelSettings(c.id, rRatedSettings())
             } else {
-                handler.setChannelSettings(c.id, defaultSettings)
+                handler.setChannelSettings(c.id, defaultSettings())
             }
         });
         handler.setServerChannels(guild.id, serverChannels);
@@ -199,7 +202,7 @@ client.on('guildDelete', async (guild) => {
     handler.setStatistics(client.shard!.ids[0], client.statistics)
 
     let serverChannels = await handler.getServerChannels(guild.id)
-    if (serverChannels) {
+    if (Array.isArray(serverChannels)) {
         serverChannels.forEach?.(id => {
         handler.deleteChannelSettings(id)
     })
@@ -213,13 +216,9 @@ client.on('guildDelete', async (guild) => {
 client.on('channelDelete', async (channel) => {
     if (channel?.type === "GUILD_TEXT") {
         let serverChannels = await handler.getServerChannels(channel.guild.id)
-        if (serverChannels.filter) {
+        if (Array.isArray(serverChannels)) {
             handler.setServerChannels(channel.guild.id, serverChannels.filter(c => c !== channel.id))
         } else {
-            if (serverChannels) {
-                console.log("serverChannels:")
-                console.dir(serverChannels)
-            }
             serverChannels = channel.guild.channels.cache
                 .filter(x => x.type === "GUILD_TEXT")
                 .map(x => x.id)
@@ -229,34 +228,38 @@ client.on('channelDelete', async (channel) => {
     }
 });
 
-client.on('interaction', async (interaction) => {
+client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
-    const { channel, guild, commandName } = interaction
+    const { channelId, guild, commandName } = interaction
 
     if (guild) {
-        let channelSettings = channel ? await handler.getChannelSettings(channel.id) : undefined
+        let channelSettings = channelId ? await handler.getChannelSettings(channelId) : undefined
 
-        if (!channelSettings && channel && guild) {
+        if ((!channelSettings || Object.keys(channelSettings).length === 0) && channelId && guild) {
             console.log("Unindexed channel")
 
-            channelSettings = (<TextChannel>channel).nsfw ? rRatedSettings : defaultSettings
+            channelSettings = defaultSettings()
 
-            let serverChannels = [...await handler.getServerChannels(guild.id), channel.id]
-            handler.setChannelSettings(channel.id, channelSettings);
+            let oldServerChannels = await handler.getServerChannels(guild.id)
+            if (!Array.isArray(oldServerChannels)) {
+                oldServerChannels = []
+            }
+            let serverChannels = [...oldServerChannels, channelId]
+            handler.setChannelSettings(channelId, channelSettings);
             handler.setServerChannels(guild.id, serverChannels)
         }
 
         if (client.slashCommands.has(commandName) && commandName !== "ans") {
-            interaction.defer()
+            await interaction.deferReply()
             client.slashCommands.get(commandName)!(interaction, channelSettings);
         }
     } else if (dmCommands.includes(commandName)) {
-        interaction.defer()
+        await interaction.deferReply()
         client.slashCommands.get(commandName)!(interaction, dmSettings)
     }
 });
 
-client.on('message', async (message) => {
+client.on('messageCreate', async (message) => {
     if (message.author.bot || (message.channel.type !== "GUILD_TEXT" && message.channel.type !== "DM")) {
         return;
     }
@@ -265,7 +268,7 @@ client.on('message', async (message) => {
     if (guild) {
         let prefix = await handler.getPrefix(guild.id);
 
-        if (!prefix) {
+        if (!prefix || (typeof prefix === "object" && Object.keys(prefix).length === 0)) {
             prefix = '+'
             handler.setPrefix(guild.id, prefix)
         }
@@ -273,15 +276,18 @@ client.on('message', async (message) => {
         if (message.content.startsWith(prefix)) {
             let channelSettings = await handler.getChannelSettings(channel.id);
 
-            if (!channelSettings && channel && guild) {
-                console.log("Unindexed channel");
+            if ((!channelSettings || Object.keys(channelSettings).length === 0) && channel && guild) {
+                console.log("Unindexed channel")
 
-                channelSettings = (<TextChannel>channel).nsfw ? rRatedSettings : defaultSettings
+                channelSettings = defaultSettings()
 
-                let serverChannels = await handler.getServerChannels(guild.id)
-                let newServerChannels = serverChannels.includes(channel.id) ? serverChannels :  [...serverChannels, channel.id]
+                let oldServerChannels = await handler.getServerChannels(guild.id)
+                if (!Array.isArray(oldServerChannels)) {
+                    oldServerChannels = []
+                }
+                let serverChannels = [...oldServerChannels, channel.id]
                 handler.setChannelSettings(channel.id, channelSettings);
-                handler.setServerChannels(guild.id, newServerChannels)
+                handler.setServerChannels(guild.id, serverChannels)
             }
 
             processCommand(message, channelSettings!, prefix, false);
@@ -298,7 +304,7 @@ client.on('message', async (message) => {
     }
     else {
         if (message.content.startsWith('+')) {
-            processCommand(message, dmSettings, '+', true);
+            processCommand(message, dmSettings(), '+', true);
         }
     }
 });
@@ -335,14 +341,15 @@ async function processCommand(message: Message, channelSettings: ChannelSettings
 }
 
 function sendMessage(channel: TextBasedChannels, messageContent: any) {
-    channel.send(messageContent).catch(() => { console.log("Missing permissions"); });
+    if (messageContent instanceof MessageEmbed) {
+        channel.send({
+            embeds: [messageContent]
+        }).catch(() => { console.log("Missing permissions") })
+    } else {
+        channel.send(messageContent).catch(() => { console.log("Missing permissions"); });
+    }
 }
 
-// var dumps = 0
-// setInterval(() => {
-//     dumps++
-//     console.log(client.shard.ids[0] + " " + process.memoryUsage().heapUsed)
-//     heapdump.writeSnapshot("/root/dumps/" + client.shard.ids[0] + "_dump_" + dumps + ".heapsnapshot", () => {
-//         console.log("Heap written")
-//     })
-// }, 200000)
+setInterval(() => {
+    console.log(client.shard!.ids[0] + " " + process.memoryUsage().heapUsed)
+}, 200000)

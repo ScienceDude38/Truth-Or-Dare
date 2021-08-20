@@ -1,9 +1,9 @@
 export { Command, SlashCommand, Meta };
-    import { CommandInteraction, Message } from 'discord.js';
-import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+    import { CommandInteraction, Message, TextBasedChannels } from 'discord.js';
+import { ChannelSettings, ChannelSetting, handler, sendMessage, Question, Discord } from '../bot.js';
 
 type wyrCategory = "pg" | "pg13" | "r"
-export type wyrQuestions = Record<wyrCategory, string[]>
+export type wyrQuestions = Record<wyrCategory, Question[]>
 
 let wyrQuestions: wyrQuestions = {
     "pg": [],
@@ -12,15 +12,19 @@ let wyrQuestions: wyrQuestions = {
 };
 
 (async function() {
+    await new Promise((res) => {
+        setTimeout(res, 5000)
+    })
     wyrQuestions = <wyrQuestions>await handler.getQuestions('wyr')
 })()
 
-var questionLog: Record<string, number[]> = {};
+var questionLog: Record<string, string[]> = {};
 
 function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
     var index: number | null = null;
+    var sentQuestionID: string | null = null
     var { guild } = message;
-    if (!channelSettings) return
+
     if (args.length > 1) {
         sendMessage(message.channel, "You can only specify one rating (pg, pg13, or r).");
     }
@@ -42,8 +46,9 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
                 index = Math.floor(Math.random() * wyrQuestions[rating].length);
-            } while (guild && questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, wyrQuestions[rating][index]);
+            } while (guild && questionLog[guild.id]?.includes(wyrQuestions[rating][index].id));
+            sendQuestion(message.channel, wyrQuestions[rating][index]);
+            sentQuestionID = wyrQuestions[rating][index].id
         }
     }
     else {
@@ -55,8 +60,9 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
             if (channelSettings[<ChannelSetting>("wyr " + rating)]) {
                 do {
                     index = Math.floor(Math.random() * wyrQuestions[rating].length);
-                } while (guild && questionLog[guild.id]?.includes(index));
-                sendMessage(message.channel, wyrQuestions[rating][index]);
+                } while (guild && questionLog[guild.id]?.includes(wyrQuestions[rating][index].id));
+                sendQuestion(message.channel, wyrQuestions[rating][index]);
+                sentQuestionID = wyrQuestions[rating][index].id
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`+enable wyr ${rating}\``);
@@ -71,14 +77,15 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         if (questionLog[guild?.id]?.length > 30) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
 
 function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
-    var index
+    var index: number | null = null
+    var sentQuestionID: string | null = null
     var { guild, options } = interaction
 
     var rating
@@ -111,18 +118,19 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
 
     do {
         index = Math.floor(Math.random() * wyrQuestions[rating].length);
-    } while (guild && questionLog[guild.id]?.includes(index));
-    interaction.editReply(wyrQuestions[rating][index])
+    } while (guild && questionLog[guild.id]?.includes(wyrQuestions[rating][index].id));
+    sendQuestionSlash(interaction, wyrQuestions[rating][index])
+    sentQuestionID = wyrQuestions[rating][index].id
 
     if (guild) {
-        if (!(guild?.id in questionLog) && guild) {
+        if (!(guild?.id in questionLog)) {
             questionLog[guild.id] = [];
         }
         if (questionLog[guild?.id]?.length > 30) {
             questionLog[guild.id].shift();
         }
-        if (index !== undefined && guild) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
@@ -143,4 +151,20 @@ const Meta = {
             ]
         }
     ]
+}
+
+function sendQuestion(channel: TextBasedChannels, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .setTitle(question.text)
+        .setFooter(question.id)
+    sendMessage(channel, questionEmbed)
+}
+
+function sendQuestionSlash(interaction: CommandInteraction, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .setTitle(question.text)
+        .setFooter(question.id)
+    interaction.editReply({
+        embeds: [questionEmbed]
+    })
 }

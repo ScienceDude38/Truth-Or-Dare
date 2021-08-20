@@ -1,10 +1,10 @@
 export { Command, SlashCommand, Meta, Aliases };
 import { CommandInteraction, Message, User } from 'discord.js';
-import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { ChannelSettings, ChannelSetting, handler, sendMessage, Question, Discord } from '../bot.js';
 import { checkUserParanoia, checkUserAns, addUser } from './paranoiaData.js';
 
 type paranoiaCategory = "pg" | "pg13" | "r"
-export type paranoiaQuestions = Record<paranoiaCategory, string[]>
+export type paranoiaQuestions = Record<paranoiaCategory, Question[]>
 
 let paranoiaQuestions: paranoiaQuestions = {
     "pg": [],
@@ -13,18 +13,24 @@ let paranoiaQuestions: paranoiaQuestions = {
 };
 
 (async function() {
+    await new Promise((res) => {
+        setTimeout(res, 5000)
+    })
     paranoiaQuestions = <paranoiaQuestions>await handler.getQuestions('paranoia')
 })()
 
 const Aliases = ["p"]
 
-var questionLog: Record<string, number[]> = {};
+var questionLog: Record<string, string[]> = {};
 
 async function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
     var index: number | null = null;
+    var sentQuestionID: string | null = null
     var { guild } = message
+
     var mentionedUsers = message.mentions.users;
     var check = mentionedUsers ? await checkUserParanoia(mentionedUsers.first()?.id!, message.guild!.id) : null
+
     if (mentionedUsers.size === 0) {
         sendMessage(message.channel, "You have to mention someone to send them a question.");
     }
@@ -37,12 +43,6 @@ async function Command(args: string[], message: Message, channelSettings: Channe
     else if (check) {
         sendMessage(message.channel, "That user already has a question active.");
         let ansCheck = await checkUserAns(mentionedUsers.first()?.id!)
-        if (!ansCheck) {
-            console.log('paranoia check:')
-            console.dir(check)
-            console.log('ans check:')
-            console.dir(ansCheck)
-        }
     }
     else if (args.length === 1) {
         let categories: paranoiaCategory[] = [];
@@ -62,8 +62,9 @@ async function Command(args: string[], message: Message, channelSettings: Channe
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
                 index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
-            } while (guild && questionLog[guild.id]?.includes(index));
-            sendQuestionToUser(mentionedUsers.first()!, rating, index, message);
+            } while (guild && questionLog[guild.id]?.includes(paranoiaQuestions[rating][index].id));
+            sendQuestionToUser(mentionedUsers.first()!, paranoiaQuestions[rating][index], message, guild!.name);
+            sentQuestionID = paranoiaQuestions[rating][index].id
         }
     }
     else if (args.length === 2) {
@@ -81,8 +82,9 @@ async function Command(args: string[], message: Message, channelSettings: Channe
             if (channelSettings[<ChannelSetting>("paranoia " + rating)]) {
                 do {
                     index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
-                } while (guild && questionLog[guild.id]?.includes(index));
-                sendQuestionToUser(mentionedUsers.first()!, rating, index, message)
+                } while (guild && questionLog[guild.id]?.includes(paranoiaQuestions[rating][index].id));
+                sendQuestionToUser(mentionedUsers.first()!, paranoiaQuestions[rating][index], message, guild!.name)
+                sentQuestionID = paranoiaQuestions[rating][index].id
             }
             else {
                 sendMessage(message.channel, `${rating.toUpperCase()} paranoia questions are disabled here. To enable them, use \`${prefix}enable paranoia ${rating}\``);
@@ -97,15 +99,17 @@ async function Command(args: string[], message: Message, channelSettings: Channe
         if (questionLog[guild.id].length > 30) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
 
 async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
     var index: number | null = null
+    var sentQuestionID: string | null = null
     var { guild, options } = interaction
+
     var user = <User>options.get('target')!.user
     var check = await checkUserParanoia(user.id, guild!.id);
 
@@ -147,10 +151,16 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
 
     do {
         index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
-    } while (guild && questionLog[guild.id]?.includes(index));
-    user.send(`Question from ${interaction.user.username} in ${guild!.name}: \n${paranoiaQuestions[rating][index]}\nReply with \`/ans\``)
+    } while (guild && questionLog[guild.id]?.includes(paranoiaQuestions[rating][index].id));
+    
+    let paranoiaEmbed = new Discord.MessageEmbed()
+        .setTitle(paranoiaQuestions[rating][index].text)
+        .setDescription(`Paranoia Question from ${interaction.user.username} in ${guild!.name}`)
+        .setFooter(`${paranoiaQuestions[rating][index].id} | Reply with +ans [answer]`)
+        
+    user.send({embeds: [paranoiaEmbed]})
         .then(() => {
-            addUser(user.id, guild!.id, interaction.channel!.id, paranoiaQuestions[rating][index!])
+            addUser(user.id, guild!.id, interaction.channel!.id, paranoiaQuestions[rating][index!].text)
             interaction.editReply("Paranoia question sent")
         })
         .catch((err) => {
@@ -165,8 +175,8 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
         if (questionLog[guild.id].length > 30) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
@@ -195,10 +205,15 @@ const Meta = {
     ]
 }
 
-function sendQuestionToUser(user: User, rating: paranoiaCategory, index: number, message: Message) {
-    user.send(`Question from ${message.author.username} in ${message.guild!.name}: \n${paranoiaQuestions[rating][index]}\nReply with \`+ans [answer]\`.`)
+function sendQuestionToUser(user: User, question: Question, message: Message, guildName: string) {
+    let paranoiaEmbed = new Discord.MessageEmbed()
+        .setTitle(question.text)
+        .setDescription(`Paranoia Question from ${message.author.username} in ${guildName}`)
+        .setFooter(`${question.id} | Reply with +ans [answer]`)
+
+    user.send({embeds: [paranoiaEmbed]})
         .then(() => {
-            addUser(user.id, message.guild!.id, message.channel.id, paranoiaQuestions[rating][index])
+            addUser(user.id, message.guild!.id, message.channel.id, question.text)
             sendMessage(message.channel, "Paranoia question sent")
         })
         .catch((err) => {

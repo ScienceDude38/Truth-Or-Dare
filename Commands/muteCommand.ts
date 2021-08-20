@@ -1,6 +1,6 @@
 export { Command, SlashCommand, Meta, Aliases };
-    import { CommandInteraction, Message } from 'discord.js';
-import { sendMessage, handler, ChannelSetting, ChannelSettings } from '../bot.js';
+    import { CommandInteraction, Guild, Message, TextChannel } from 'discord.js';
+import { sendMessage, handler, ChannelSetting, ChannelSettings, rRatedSettings, defaultSettings } from '../bot.js';
 
 const Aliases = ["m"]
 
@@ -15,9 +15,9 @@ async function Command(args: string[], message: Message, channelSettings: Channe
     }
     else {
         if (args.includes('server') && args.length === 1) {
-            let serverChannels = await handler.getServerChannels(message.guild!.id)
+            let serverChannels = await getSC(guild!)
             for (let channel of serverChannels) {
-                let cs = await handler.getChannelSettings(channel)
+                let cs = await getCS(channel, guild!)
                 if (cs) {
                     cs["muted?"] = true
                     handler.setChannelSettings(channel, cs)
@@ -42,9 +42,9 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
     let { guild, options } = interaction
     let serverwide = options.get('serverwide')!.value
     if (serverwide) {
-        let serverChannels = await handler.getServerChannels(guild!.id)
+        let serverChannels = await getSC(guild!)
         for (let channel of serverChannels) {
-            let cs = await handler.getChannelSettings(channel)
+            let cs = await getCS(channel, guild!)
             if (cs) {
                 cs["muted?"] = true
                 handler.setChannelSettings(channel, cs)
@@ -58,7 +58,7 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
         }
 
         let channelID = options.get('channel')!.channel!.id
-        let cs = await handler.getChannelSettings(channelID)
+        let cs = await getCS(channelID, guild!)
         if (cs) {
             cs["muted?"] = true
             handler.setChannelSettings(channelID, cs)
@@ -89,4 +89,34 @@ const Meta = {
             required: false
         }
     ]
+}
+
+async function getCS(channelID: string, guild: Guild) {
+    let cs = await handler.getChannelSettings(channelID);
+
+    if (!cs || Object.keys(cs).length === 0) {
+        console.log("Unindexed channel");
+
+        let channel = await guild.channels.fetch(channelID)
+        cs = (<TextChannel>channel).nsfw ? rRatedSettings() : defaultSettings()
+
+        let serverChannels = await getSC(guild)
+        let newServerChannels = serverChannels.includes(channelID) ? serverChannels :  [...serverChannels, channelID]
+        handler.setChannelSettings(channelID, cs);
+        handler.setServerChannels(guild.id, newServerChannels)
+    }
+
+    return cs
+}
+
+async function getSC(guild: Guild) {
+    let sc = await handler.getServerChannels(guild.id)
+
+    if (!Array.isArray(sc)) {
+        sc = guild.channels.cache
+            .filter(x => x.type === "GUILD_TEXT")
+            .map(x => x.id)
+    }
+
+    return sc
 }

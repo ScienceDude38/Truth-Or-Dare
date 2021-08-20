@@ -51,8 +51,8 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
         let channelID = options.get('channel')!.channel!.id
         let cs = await handler.getChannelSettings(channelID)
 
-        if (cs === undefined) {
-            cs = defaultSettings
+        if (!cs || Object.keys(cs).length === 0) {
+            cs = defaultSettings()
             handler.setChannelSettings(channelID, cs)
         }
 

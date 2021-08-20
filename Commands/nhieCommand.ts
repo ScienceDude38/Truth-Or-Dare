@@ -1,9 +1,9 @@
 export { Command, SlashCommand, Meta };
-import { CommandInteraction, Message } from 'discord.js';
-import { ChannelSettings, ChannelSetting, handler, sendMessage } from '../bot.js';
+import { CommandInteraction, Message, TextBasedChannels } from 'discord.js';
+import { ChannelSettings, ChannelSetting, handler, sendMessage, Question, Discord } from '../bot.js';
 
 type nhieCategory = "pg" | "pg13" | "r"
-export type nhieQuestions = Record<nhieCategory, string[]>
+export type nhieQuestions = Record<nhieCategory, Question[]>
 
 
 let nhieQuestions: nhieQuestions = {
@@ -13,15 +13,18 @@ let nhieQuestions: nhieQuestions = {
 };
 
 (async function() {
+    await new Promise((res) => {
+        setTimeout(res, 5000)
+    })
     nhieQuestions = <nhieQuestions>await handler.getQuestions('nhie')
 })()
 
-var questionLog: Record<string, number[]> = {};
+var questionLog: Record<string, string[]> = {};
 
 function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
     var index: number | null = null;
+    var sentQuestionID: string | null = null
     var { guild } = message;
-    if (!channelSettings) return
 
     if (args.length > 1) {
         sendMessage(message.channel, "You can only specify one rating (pg, pg13, or r).");
@@ -44,8 +47,9 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
             let rating = categories[Math.floor(Math.random() * categories.length)];
             do {
                 index = Math.floor(Math.random() * nhieQuestions[rating].length);
-            } while (guild && questionLog[guild.id]?.includes(index));
-            sendMessage(message.channel, nhieQuestions[rating][index]);
+            } while (guild && questionLog[guild.id]?.includes(nhieQuestions[rating][index].id));
+            sendQuestion(message.channel, nhieQuestions[rating][index]);
+            sentQuestionID = nhieQuestions[rating][index].id
         }
     }
     else {
@@ -57,8 +61,9 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
             if (channelSettings[<ChannelSetting>("nhie " + category)]) {
                 do {
                     index = Math.floor(Math.random() * nhieQuestions[category].length);
-                } while (guild && questionLog[guild.id]?.includes(index));
+                } while (guild && questionLog[guild.id]?.includes(nhieQuestions[category][index].id));
                 sendMessage(message.channel, nhieQuestions[category][index]);
+                sentQuestionID = nhieQuestions[category][index].id
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`+enable nhie ${category}\``);
@@ -73,14 +78,15 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         if (questionLog[guild?.id]?.length > 30) {
             questionLog[guild.id].shift();
         }
-        if (index !== null) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== null) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
 
 function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
-    var index
+    var index: number | null = null
+    var sentQuestionID: string | null = null
     var { guild, options } = interaction
 
     var rating: nhieCategory
@@ -113,8 +119,9 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
 
     do {
         index = Math.floor(Math.random() * nhieQuestions[rating].length);
-    } while (guild && questionLog[guild.id]?.includes(index));
-    interaction.editReply(nhieQuestions[rating][index])
+    } while (guild && questionLog[guild.id]?.includes(nhieQuestions[rating][index].id));
+    sendQuestionSlash(interaction, nhieQuestions[rating][index])
+    sentQuestionID = nhieQuestions[rating][index].id
 
     if (guild) {
         if (!(guild.id in questionLog)) {
@@ -123,8 +130,8 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
         if (questionLog[guild.id]?.length > 30) {
             questionLog[guild.id].shift();
         }
-        if (index !== undefined) {
-            questionLog[guild.id].push(index);
+        if (sentQuestionID !== undefined) {
+            questionLog[guild.id].push(sentQuestionID);
         }
     }
 }
@@ -145,4 +152,20 @@ const Meta = {
             ]
         }
     ]
+}
+
+function sendQuestion(channel: TextBasedChannels, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .setTitle(question.text)
+        .setFooter(question.id)
+    sendMessage(channel, questionEmbed)
+}
+
+function sendQuestionSlash(interaction: CommandInteraction, question: Question) {
+    let questionEmbed = new Discord.MessageEmbed()
+        .setTitle(question.text)
+        .setFooter(question.id)
+    interaction.editReply({
+        embeds: [questionEmbed]
+    })
 }

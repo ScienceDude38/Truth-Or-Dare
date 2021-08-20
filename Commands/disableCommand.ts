@@ -1,6 +1,6 @@
 export { Command, SlashCommand, Meta, Aliases };
 import { CommandInteraction, Guild, Message, TextChannel } from 'discord.js';
-import { sendMessage, handler, ChannelSettings, ChannelSetting } from '../bot.js';
+import { sendMessage, handler, ChannelSettings, ChannelSetting, defaultSettings, rRatedSettings } from '../bot.js';
 
 type notShowParanoia<T> = T extends "show paranoia" ? never : T
 type ValidChannelSetting = notShowParanoia<ChannelSetting>
@@ -67,7 +67,7 @@ async function Command(args: string[], message: Message, channelSettings: Channe
             }
             else {
                 if (args.includes("server")) {
-                    let serverChannels = await handler.getServerChannels(guild!.id)
+                    let serverChannels = await getSC(guild!)
                     for (let c of serverChannels) {
                         let cs = await getCS(c, guild!)
                         for (let setting of toBeDisabled) {
@@ -89,7 +89,7 @@ async function Command(args: string[], message: Message, channelSettings: Channe
 }
 
 async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
-    let { guild, channel, options } = interaction
+    let { guild, channelId, options } = interaction
     let serverwide = options.get('serverwide')!.value
     let command = options.get('command')!.value
     let category = options.get('category')!.value
@@ -111,7 +111,7 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
     }
 
     if (serverwide) {
-        let serverChannels = await handler.getServerChannels(guild!.id)
+        let serverChannels = await getSC(guild!)
         for (let c of serverChannels) {
             let cs = await getCS(c, guild!)
             for (let setting of toBeDisabled) {
@@ -139,7 +139,7 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
         for (let setting of toBeDisabled) {
             channelSettings[setting] = false
         }
-        await handler.setChannelSettings(channel!.id, channelSettings)
+        await handler.setChannelSettings(channelId, channelSettings)
 
         interaction.editReply(`${joinToString(toBeDisabled)} disabled in the current channel`)
     }
@@ -201,23 +201,32 @@ function joinToString(array: string[]) {
             `\`${array[0]}\``
 }
 
-const defaultSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": false, "dare pg": true, "dare pg13": true, "dare r": false, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": false, "nhie pg": true, "nhie pg13": true, "nhie r": false, "paranoia pg": true, "paranoia pg13": true, "paranoia r": false, "show paranoia": "default" };
-const rRatedSettings = { "muted?": false, "truth pg": true, "truth pg13": true, "truth r": true, "dare pg": true, "dare pg13": true, "dare r": true, "dare d": true, "dare irl": false, "wyr pg": true, "wyr pg13": true, "wyr r": true, "nhie pg": true, "nhie pg13": true, "nhie r": true, "paranoia pg": true, "paranoia pg13": true, "paranoia r": true, "show paranoia": "default" };
-
 async function getCS(channelID: string, guild: Guild) {
     let cs = await handler.getChannelSettings(channelID);
 
-    if (!cs) {
+    if (!cs || Object.keys(cs).length === 0) {
         console.log("Unindexed channel");
 
         let channel = await guild.channels.fetch(channelID)
-        cs = (<TextChannel>channel).nsfw ? rRatedSettings : defaultSettings
+        cs = (<TextChannel>channel).nsfw ? rRatedSettings() : defaultSettings()
 
-        let serverChannels = await handler.getServerChannels(guild.id)
+        let serverChannels = await getSC(guild)
         let newServerChannels = serverChannels.includes(channelID) ? serverChannels :  [...serverChannels, channelID]
         handler.setChannelSettings(channelID, cs);
         handler.setServerChannels(guild.id, newServerChannels)
     }
 
     return cs
+}
+
+async function getSC(guild: Guild) {
+    let sc = await handler.getServerChannels(guild.id)
+
+    if (!Array.isArray(sc)) {
+        sc = guild.channels.cache
+            .filter(x => x.type === "GUILD_TEXT")
+            .map(x => x.id)
+    }
+
+    return sc
 }
