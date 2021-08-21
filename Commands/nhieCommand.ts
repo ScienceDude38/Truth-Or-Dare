@@ -2,11 +2,11 @@ export { Command, SlashCommand, Meta };
 import { CommandInteraction, Message, TextBasedChannels } from 'discord.js';
 import { ChannelSettings, ChannelSetting, handler, sendMessage, Question, Discord } from '../bot.js';
 
-type nhieCategory = "pg" | "pg13" | "r"
-export type nhieQuestions = Record<nhieCategory, Question[]>
+export type nhieCategory = "pg" | "pg13" | "r"
+export type nhieQuestionList = Record<nhieCategory, Question[]>
 
 
-let nhieQuestions: nhieQuestions = {
+let nhieQuestions: nhieQuestionList = {
     "pg": [],
     "pg13": [],
     "r": []
@@ -16,15 +16,25 @@ let nhieQuestions: nhieQuestions = {
     await new Promise((res) => {
         setTimeout(res, 5000)
     })
-    nhieQuestions = <nhieQuestions>await handler.getQuestions('nhie')
+    nhieQuestions = <nhieQuestionList>await handler.getQuestions('nhie')
 })()
 
 var questionLog: Record<string, string[]> = {};
 
-function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
+async function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
     var index: number | null = null;
     var sentQuestionID: string | null = null
     var { guild } = message;
+
+    let customQuestions: nhieQuestionList = guild ? <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id) : defaultNhieQuestionList()
+    if (!customQuestions || Object.keys(customQuestions).length === 0) {
+        customQuestions = defaultNhieQuestionList()
+    }
+    let overrides = guild ? await handler.getOverrides("nhie", guild!.id) : []
+    if (!Array.isArray(overrides)) {
+        overrides = []
+    }
+    if (!channelSettings) return
 
     if (args.length > 1) {
         sendMessage(message.channel, "You can only specify one rating (pg, pg13, or r).");
@@ -45,11 +55,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         }
         else {
             let rating = categories[Math.floor(Math.random() * categories.length)];
+            let questions = [...nhieQuestions[rating].filter(x => !overrides.includes(x.id)), ...customQuestions[rating]]
             do {
-                index = Math.floor(Math.random() * nhieQuestions[rating].length);
-            } while (guild && questionLog[guild.id]?.includes(nhieQuestions[rating][index].id));
-            sendQuestion(message.channel, nhieQuestions[rating][index]);
-            sentQuestionID = nhieQuestions[rating][index].id
+                index = Math.floor(Math.random() * questions.length);
+            } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+            sendQuestion(message.channel, questions[index]);
+            sentQuestionID = questions[index].id
         }
     }
     else {
@@ -59,11 +70,12 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
         else {
             let category = <nhieCategory>args[0]
             if (channelSettings[<ChannelSetting>("nhie " + category)]) {
+                let questions = [...nhieQuestions[category].filter(x => !overrides.includes(x.id)), ...customQuestions[category]]
                 do {
-                    index = Math.floor(Math.random() * nhieQuestions[category].length);
-                } while (guild && questionLog[guild.id]?.includes(nhieQuestions[category][index].id));
-                sendMessage(message.channel, nhieQuestions[category][index]);
-                sentQuestionID = nhieQuestions[category][index].id
+                    index = Math.floor(Math.random() * questions.length);
+                } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+                sendQuestion(message.channel, questions[index]);
+                sentQuestionID = questions[index].id
             }
             else {
                 sendMessage(message.channel, `That rating is disabled here. To enable it, use \`+enable nhie ${category}\``);
@@ -84,10 +96,18 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
     }
 }
 
-function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
     var index: number | null = null
     var sentQuestionID: string | null = null
     var { guild, options } = interaction
+    let customQuestions: nhieQuestionList = guild ? <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id) : defaultNhieQuestionList()
+    if (!customQuestions || Object.keys(customQuestions).length === 0) {
+        customQuestions = defaultNhieQuestionList()
+    }
+    let overrides = guild ? await handler.getOverrides("nhie", guild!.id) : []
+    if (!Array.isArray(overrides)) {
+        overrides = []
+    }
 
     var rating: nhieCategory
     if (options.data.some(o => o.name === 'rating')) {
@@ -117,11 +137,12 @@ function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelS
         }
     }
 
+    let questions = [...nhieQuestions[rating].filter(x => !overrides.includes(x.id)), ...customQuestions[rating]]
     do {
-        index = Math.floor(Math.random() * nhieQuestions[rating].length);
-    } while (guild && questionLog[guild.id]?.includes(nhieQuestions[rating][index].id));
-    sendQuestionSlash(interaction, nhieQuestions[rating][index])
-    sentQuestionID = nhieQuestions[rating][index].id
+        index = Math.floor(Math.random() * questions.length);
+    } while (guild && questionLog[guild.id]?.includes(questions[index].id));
+    sendQuestionSlash(interaction, questions[index])
+    sentQuestionID = questions[index].id
 
     if (guild) {
         if (!(guild.id in questionLog)) {
@@ -152,6 +173,14 @@ const Meta = {
             ]
         }
     ]
+}
+
+export function defaultNhieQuestionList() {
+    return {
+        pg: [],
+        pg13: [],
+        r: []
+    }
 }
 
 function sendQuestion(channel: TextBasedChannels, question: Question) {

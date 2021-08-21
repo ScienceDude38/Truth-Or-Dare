@@ -9,9 +9,6 @@ async function checkUserParanoia(user: string, guild: string) {
         return userData.some((a) => a.guild === guild && Date.now() - a.time < 86400000);
     }
     else {
-        if (userData) {
-            handler.deleteParanoiaData(user)
-        }
         return false;
     }
 }

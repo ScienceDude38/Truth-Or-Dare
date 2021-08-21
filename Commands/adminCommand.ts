@@ -1,6 +1,5 @@
 export { SlashCommand, Meta }
 import { client, commandIDs } from '../bot.js'
-import * as https from 'https'
 import { CommandInteraction } from 'discord.js'
 
 type T = "disable" | "enable" | "mute" | "unmute" | "showparanoia" | "add" | "remove"
@@ -43,6 +42,7 @@ async function SlashCommand(interaction: CommandInteraction) {
             ],
             guild: guild!
         })
+        interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
     } else if (command === "mute/unmute") {
         await client.application!.commands.permissions.add({
             command: commandIDs["mute"],
@@ -66,6 +66,7 @@ async function SlashCommand(interaction: CommandInteraction) {
             ],
             guild: guild!
         })
+        interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
     } else if (command === "showparanoia") {
         await client.application!.commands.permissions.add({
             command: commandIDs["showparanoia"],
@@ -78,9 +79,43 @@ async function SlashCommand(interaction: CommandInteraction) {
             ],
             guild: guild!
         })
+        interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
+    } else if (command === "add/remove/readd") {
+        await client.application!.commands.permissions.add({
+            command: commandIDs["add"],
+            permissions: [
+                {
+                    id: role!.id,
+                    type: "ROLE",
+                    permission: options.getSubcommand() === "set"
+                }
+            ],
+            guild: guild!
+        })
+        await client.application!.commands.permissions.add({
+            command: commandIDs["remove"],
+            permissions: [
+                {
+                    id: role!.id,
+                    type: "ROLE",
+                    permission: options.getSubcommand() === "set"
+                }
+            ],
+            guild: guild!
+        })
+        await client.application!.commands.permissions.add({
+            command: commandIDs["readd"],
+            permissions: [
+                {
+                    id: role!.id,
+                    type: "ROLE",
+                    permission: options.getSubcommand() === "set"
+                }
+            ],
+            guild: guild!
+        })
+        interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
     }
-
-    interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
 }
 
 const Meta = {
@@ -105,7 +140,8 @@ const Meta = {
                     choices: [
                         { name: "enable/disable", value: "enable/disable" },
                         { name: "mute/unmute", value: "mute/unmute" },
-                        { name: "showparanoia", value: "showparanoia" }
+                        { name: "showparanoia", value: "showparanoia" },
+                        { name: "add/remove/readd", value: "add/remove/readd" }
                     ],
                     required: true
                 }
@@ -124,12 +160,13 @@ const Meta = {
                 },
                 {
                     name: 'command',
-                    description: "The command(s) to add admin permissions for",
+                    description: "The command(s) to remove admin permissions for",
                     type: "STRING",
                     choices: [
                         { name: "enable/disable", value: "enable/disable" },
                         { name: "mute/unmute", value: "mute/unmute" },
-                        { name: "showparanoia", value: "showparanoia" }
+                        { name: "showparanoia", value: "showparanoia" },
+                        { name: "add/remove/readd", value: "add/remove/readd" }
                     ],
                     required: true
                 }

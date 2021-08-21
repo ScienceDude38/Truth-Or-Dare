@@ -104,28 +104,28 @@ setInterval(() => {
 }, 600000);
 
 import { MongoHandler } from './mongodbFunctions.js';
-import { truthQuestions } from "./Commands/truthCommand.js";
-import { dareQuestions } from "./Commands/dareCommand.js";
-import { wyrQuestions } from "./Commands/wyrCommand.js";
-import { nhieQuestions } from "./Commands/nhieCommand.js";
-import { paranoiaQuestions } from "./Commands/paranoiaCommand.js";
+import { truthQuestionList } from "./Commands/truthCommand.js";
+import { dareQuestionList } from "./Commands/dareCommand.js";
+import { wyrQuestionList } from "./Commands/wyrCommand.js";
+import { nhieQuestionList } from "./Commands/nhieCommand.js";
+import { paranoiaQuestionList } from "./Commands/paranoiaCommand.js";
 const handler = new MongoHandler()
 handler.init(client.shard!.ids[0]).then(async () => {
     console.log("MongoDB connected")
 
-    let truthQuestions = <truthQuestions>await handler.getQuestions("truth")
+    let truthQuestions = <truthQuestionList>await handler.getQuestions("truth")
     client.numberTruths = truthQuestions.pg.length + truthQuestions.pg13.length + truthQuestions.r.length
 
-    let dareQuestions = <dareQuestions>await handler.getQuestions("dare")
+    let dareQuestions = <dareQuestionList>await handler.getQuestions("dare")
     client.numberDares = dareQuestions.pg_d.length + dareQuestions.pg13_d.length + dareQuestions.r_d.length + dareQuestions.pg_irl.length + dareQuestions.pg13_irl.length + dareQuestions.r_irl.length
     
-    let wyrQuestions = <wyrQuestions>await handler.getQuestions("wyr")
+    let wyrQuestions = <wyrQuestionList>await handler.getQuestions("wyr")
     client.numberWyr = wyrQuestions.pg.length + wyrQuestions.pg13.length + wyrQuestions.r.length
     
-    let nhieQuestions = <nhieQuestions>await handler.getQuestions("nhie")
+    let nhieQuestions = <nhieQuestionList>await handler.getQuestions("nhie")
     client.numberNhie = nhieQuestions.pg.length + nhieQuestions.pg13.length + nhieQuestions.r.length
     
-    let paranoiaQuestions = <paranoiaQuestions>await handler.getQuestions("paranoia")
+    let paranoiaQuestions = <paranoiaQuestionList>await handler.getQuestions("paranoia")
     client.numberParanoias = paranoiaQuestions.pg.length + paranoiaQuestions.pg13.length + paranoiaQuestions.r.length
 
     client.login(process.env.TOKEN).catch(console.log)
@@ -300,7 +300,9 @@ client.on('messageCreate', async (message) => {
                     .setTitle("Links")
                     .addField('\u200B', 'Enjoying the bot? Make sure to [give feedback](https://truthordarebot.xyz/feedback) and [suggest questions](https://truthordarebot.xyz/question_submit).')
                     .setTimestamp();
-                sendMessage(channel, linkEmbed);
+                sendMessage(channel, {
+                    embeds: [linkEmbed]
+                });
             }
         }
     }
@@ -351,7 +353,3 @@ function sendMessage(channel: TextBasedChannels, messageContent: any) {
         channel.send(messageContent).catch(() => { console.log("Missing permissions"); });
     }
 }
-
-setInterval(() => {
-    console.log(client.shard!.ids[0] + " " + process.memoryUsage().heapUsed)
-}, 200000)
