@@ -1,6 +1,6 @@
 export { Command, SlashCommand, Meta, Aliases };
 import { CommandInteraction, Message, User } from 'discord.js';
-import { ChannelSettings, ChannelSetting, handler, sendMessage, Question, Discord } from '../bot.js';
+import { ChannelSettings, ChannelSetting, handler, sendMessage, Question, Discord, client } from '../bot.js';
 import { checkUserParanoia, checkUserAns, addUser } from './paranoiaData.js';
 
 type paranoiaCategory = "pg" | "pg13" | "r"
@@ -62,7 +62,8 @@ async function Command(args: string[], message: Message, channelSettings: Channe
             do {
                 index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
             } while (guild && questionLog[guild.id]?.includes(paranoiaQuestions[rating][index].id));
-            sendQuestionToUser(mentionedUsers.first()!, paranoiaQuestions[rating][index], message, guild!.name);
+            let fetchedGuild = await client.guilds.fetch(guild!.id)
+            sendQuestionToUser(mentionedUsers.first()!, paranoiaQuestions[rating][index], message, fetchedGuild.name);
             sentQuestionID = paranoiaQuestions[rating][index].id
         }
     }
@@ -82,7 +83,8 @@ async function Command(args: string[], message: Message, channelSettings: Channe
                 do {
                     index = Math.floor(Math.random() * paranoiaQuestions[rating].length);
                 } while (guild && questionLog[guild.id]?.includes(paranoiaQuestions[rating][index].id));
-                sendQuestionToUser(mentionedUsers.first()!, paranoiaQuestions[rating][index], message, guild!.name)
+                let fetchedGuild = await client.guilds.fetch(guild!.id)
+                sendQuestionToUser(mentionedUsers.first()!, paranoiaQuestions[rating][index], message, fetchedGuild.name)
                 sentQuestionID = paranoiaQuestions[rating][index].id
             }
             else {
