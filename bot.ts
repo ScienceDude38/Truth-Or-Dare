@@ -1,4 +1,4 @@
-import Discord, { Options, ClientOptions, Collection, CommandInteraction, GuildChannel, Message, TextBasedChannels, TextChannel, MessageEmbed } from 'discord.js'
+import Discord, { Options, ClientOptions, Collection, CommandInteraction, GuildChannel, Message, TextBasedChannels, TextChannel, MessageEmbed } from 'discord.js-light'
 
 import dotenv from 'dotenv'
 dotenv.config()
@@ -53,21 +53,23 @@ const client: CustomClient = new CustomClient({
     makeCache: Options.cacheWithLimits({
         ApplicationCommandManager: 0,
         BaseGuildEmojiManager: 0,
+        ChannelManager: 1,
         GuildBanManager: 0,
+        GuildChannelManager: 1,
         GuildInviteManager: 0,
+        GuildManager: 15,
         GuildMemberManager: 0,
         GuildStickerManager: 0,
         MessageManager: 0,
+        PermissionOverwriteManager: 0,
         PresenceManager: 0,
         ReactionManager: 0,
         ReactionUserManager: 0,
+        RoleManager: 0,
         StageInstanceManager: 0,
         ThreadManager: 0,
         ThreadMemberManager: 0,
-        UserManager: {
-            maxSize: 25,
-            keepOverLimit: (value, key, collection) => value.id === client.user!.id
-        },
+        UserManager: 0,
         VoiceStateManager: 0
     }),
     allowedMentions: { parse:['users'], repliedUser: true },
