@@ -42,7 +42,6 @@ async function Command(args: string[], message: Message, channelSettings: Channe
     }
     else if (check) {
         sendMessage(message.channel, "That user already has a question active.");
-        let ansCheck = await checkUserAns(mentionedUsers.first()?.id!)
     }
     else if (args.length === 1) {
         let categories: paranoiaCategory[] = [];
