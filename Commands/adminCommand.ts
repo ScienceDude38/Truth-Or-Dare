@@ -1,10 +1,10 @@
 export { SlashCommand, Meta }
-import { client, commandIDs } from '../bot.js'
+import { ChannelSettings, client, commandIDs } from '../bot.js'
 import { CommandInteraction } from 'discord.js'
 
 type T = "disable" | "enable" | "mute" | "unmute" | "showparanoia" | "add" | "remove"
 
-async function SlashCommand(interaction: CommandInteraction) {
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings, premium: boolean) {
     let { guild, user, options } = interaction
     let member = await guild!.members.fetch(user.id)
     let roles = await Promise.all(member.roles.cache.map(role => guild!.roles.fetch(role.id)))
@@ -81,6 +81,11 @@ async function SlashCommand(interaction: CommandInteraction) {
         })
         interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
     } else if (command === "add/remove/readd") {
+        if (!premium) {
+            interaction.editReply("These commands are only available for servers with the premium version of the bot")
+            return
+        }
+
         await client.application!.commands.permissions.add({
             command: commandIDs["add"],
             permissions: [

@@ -22,16 +22,16 @@ const Aliases = ["t"]
 
 var questionLog: Record<string, string[]> = {};
 
-async function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
+async function Command(args: string[], message: Message, channelSettings: ChannelSettings, premium: boolean, prefix: string) {
     var index: number | null = null;
     var sentQuestionID: string | null = null
     var { guild } = message;
 
-    let customQuestions: truthQuestionList = guild ? <truthQuestionList>await handler.getCustomQuestions("truth", guild!.id) : defaultTruthQuestionList()
+    let customQuestions: truthQuestionList = premium && guild ? <truthQuestionList>await handler.getCustomQuestions("truth", guild!.id) : defaultTruthQuestionList()
     if (!customQuestions || Object.keys(customQuestions).length === 0) {
         customQuestions = defaultTruthQuestionList()
     }
-    let overrides = guild ? await handler.getOverrides("truth", guild!.id) : []
+    let overrides = premium && guild ? await handler.getOverrides("truth", guild!.id) : []
     if (!Array.isArray(overrides)) {
         overrides = []
     }
@@ -97,16 +97,16 @@ async function Command(args: string[], message: Message, channelSettings: Channe
     }
 }
 
-async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings, premium: boolean) {
     var index: number | null = null
     var sentQuestionID: string | null = null
     var { guild, options } = interaction
 
-    let customQuestions: truthQuestionList = guild ? <truthQuestionList>await handler.getCustomQuestions("truth", guild!.id) : defaultTruthQuestionList()
+    let customQuestions: truthQuestionList = premium && guild ? <truthQuestionList>await handler.getCustomQuestions("truth", guild!.id) : defaultTruthQuestionList()
     if (!customQuestions || Object.keys(customQuestions).length === 0) {
         customQuestions = defaultTruthQuestionList()
     }
-    let overrides = guild ? await handler.getOverrides("truth", guild!.id) : []
+    let overrides = premium && guild ? await handler.getOverrides("truth", guild!.id) : []
     if (!Array.isArray(overrides)) {
         overrides = []
     }

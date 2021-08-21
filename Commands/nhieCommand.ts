@@ -21,20 +21,19 @@ let nhieQuestions: nhieQuestionList = {
 
 var questionLog: Record<string, string[]> = {};
 
-async function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
+async function Command(args: string[], message: Message, channelSettings: ChannelSettings, premium: boolean, prefix: string) {
     var index: number | null = null;
     var sentQuestionID: string | null = null
     var { guild } = message;
 
-    let customQuestions: nhieQuestionList = guild ? <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id) : defaultNhieQuestionList()
+    let customQuestions: nhieQuestionList = premium && guild ? <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id) : defaultNhieQuestionList()
     if (!customQuestions || Object.keys(customQuestions).length === 0) {
         customQuestions = defaultNhieQuestionList()
     }
-    let overrides = guild ? await handler.getOverrides("nhie", guild!.id) : []
+    let overrides = premium && guild ? await handler.getOverrides("nhie", guild!.id) : []
     if (!Array.isArray(overrides)) {
         overrides = []
     }
-    if (!channelSettings) return
 
     if (args.length > 1) {
         sendMessage(message.channel, "You can only specify one rating (pg, pg13, or r).");
@@ -96,15 +95,15 @@ async function Command(args: string[], message: Message, channelSettings: Channe
     }
 }
 
-async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings) {
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings, premium: boolean) {
     var index: number | null = null
     var sentQuestionID: string | null = null
     var { guild, options } = interaction
-    let customQuestions: nhieQuestionList = guild ? <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id) : defaultNhieQuestionList()
+    let customQuestions: nhieQuestionList = premium && guild ? <nhieQuestionList>await handler.getCustomQuestions("nhie", guild!.id) : defaultNhieQuestionList()
     if (!customQuestions || Object.keys(customQuestions).length === 0) {
         customQuestions = defaultNhieQuestionList()
     }
-    let overrides = guild ? await handler.getOverrides("nhie", guild!.id) : []
+    let overrides = premium && guild ? await handler.getOverrides("nhie", guild!.id) : []
     if (!Array.isArray(overrides)) {
         overrides = []
     }

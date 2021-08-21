@@ -366,6 +366,36 @@ class MongoHandler {
             })
         })
     }
+    async getPremiumServer(guildID: string): Promise<boolean> {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+
+        this.handler.emit('message', {
+            operation: "getPremiumServer",
+            args: [guildID],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data: any) => {
+                res(data)
+            })
+        })
+    }
+    async setPremiumServer(guildID: string, value: boolean) {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+
+        this.handler.emit('message', {
+            operation: "setPremiumServer",
+            args: [guildID, value],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data: any) => {
+                res(data)
+            })
+        })
+    }
 }
 
 export {MongoHandler}

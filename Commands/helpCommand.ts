@@ -12,7 +12,7 @@ const paranoiaColor = '#9b59b5'
 const infoColor = '#e91e62'
 const settingsColor = '#e73c3b'
 
-function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
+function Command(args: string[], message: Message, channelSettings: ChannelSettings, premium: boolean, prefix: string) {
     if (args.length == 0) {
         sendMessage(message.channel, createHelpEmbed(helpColor, 'Commands:', [
             { name: `__Question Commands__`, value: `${prefix}help q: Commands used to get questions or other fun content from the bot (truth, dare, paranoia, etc.)` },
@@ -21,7 +21,7 @@ function Command(args: string[], message: Message, channelSettings: ChannelSetti
     }
     else if (args.length > 1) {
         for (let argument of args) {
-            Command([argument], message, channelSettings, prefix);
+            Command([argument], message, channelSettings, premium, prefix);
         }
     }
     else if (args.length == 1) {

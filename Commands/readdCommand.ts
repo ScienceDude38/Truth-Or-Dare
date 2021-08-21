@@ -1,10 +1,15 @@
 import { CommandInteraction } from "discord.js";
-import { handler } from "../bot";
+import { ChannelSettings, handler } from "../bot";
 
 export { SlashCommand, Meta }
 
-async function SlashCommand(interaction: CommandInteraction) {
+async function SlashCommand(interaction: CommandInteraction, channelSettings: ChannelSettings, premium: boolean) {
     let { guild, options } = interaction
+
+    if (!premium) {
+        interaction.editReply("This command is only available for servers with the premium version of the bot")
+        return
+    }
 
     let subcommand = options.getSubcommand()
 

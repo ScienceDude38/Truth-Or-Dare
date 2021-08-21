@@ -42,7 +42,8 @@ var collectionNames = [
     "serverCounts",
     "questions",
     "customQuestions",
-    "questionOverrides"
+    "questionOverrides",
+    "premiumServers"
 ]
 
 var collections: Record<string, Collection> = {}
@@ -185,6 +186,18 @@ const functions: Record<string, Function> = {
     setOverrides: async (name: string, guildID: string, value: overrides) => {
         let collection = collections.questionOverrides
         return collection.findOneAndReplace({ guildID, name }, { guildID, name, data: value }, {"upsert": true})
+    },
+    getPremiumServer: async (guildID: string) => {
+        let collection = collections.premiumServers
+        return !!(await collection.findOne({ guildID }))
+    },
+    setPremiumServer: async (guildID: string, value: boolean) => {
+        let collection = collections.premiumServers
+        if (value) {
+            collection.findOneAndReplace({ guildID }, { guildID }, { "upsert": true })
+        } else {
+            collection.deleteOne({ guildID })
+        }
     }
 }
 

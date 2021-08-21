@@ -253,11 +253,12 @@ client.on('interactionCreate', async (interaction) => {
 
         if (client.slashCommands.has(commandName) && commandName !== "ans") {
             await interaction.deferReply()
-            client.slashCommands.get(commandName)!(interaction, channelSettings);
+            let premium = await handler.getPremiumServer(guild.id)
+            client.slashCommands.get(commandName)!(interaction, channelSettings, premium);
         }
     } else if (dmCommands.includes(commandName)) {
         await interaction.deferReply()
-        client.slashCommands.get(commandName)!(interaction, dmSettings)
+        client.slashCommands.get(commandName)!(interaction, dmSettings(), false)
     }
 });
 
@@ -292,7 +293,8 @@ client.on('messageCreate', async (message) => {
                 handler.setServerChannels(guild.id, serverChannels)
             }
 
-            processCommand(message, channelSettings!, prefix, false);
+            let premium = await handler.getPremiumServer(guild!.id)
+            processCommand(message, channelSettings!, prefix, false, premium);
 
             if (Math.random() < 0.007) {
                 let linkEmbed = new Discord.MessageEmbed()
@@ -308,12 +310,12 @@ client.on('messageCreate', async (message) => {
     }
     else {
         if (message.content.startsWith('+')) {
-            processCommand(message, dmSettings(), '+', true);
+            processCommand(message, dmSettings(), '+', true, false);
         }
     }
 });
 
-async function processCommand(message: Message, channelSettings: ChannelSettings, prefix: string, dm: boolean) {
+async function processCommand(message: Message, channelSettings: ChannelSettings, prefix: string, dm: boolean, premium: boolean) {
     var fullCommand = dm ? message.content.substr(1) : message.content.substr(prefix.length)
     let splitCommand = fullCommand.toLowerCase().trim().split(/ +|\n/gm);
     let primaryCommand = splitCommand[0];
@@ -332,11 +334,11 @@ async function processCommand(message: Message, channelSettings: ChannelSettings
                     channelTime[message.channel.id] = Date.now();
                 }
             } else if (primaryCommand === "unmute" || primaryCommand === "um") {
-                client.commands.get(primaryCommand)!(args, message, channelSettings, prefix)
+                client.commands.get(primaryCommand)!(args, message, channelSettings, premium, prefix)
             }
         } else {
             if(dmCommands.includes(primaryCommand)) {
-                client.commands.get(primaryCommand)!(args, message, channelSettings, prefix);
+                client.commands.get(primaryCommand)!(args, message, channelSettings, premium, prefix);
             } else if (client.commands.has(primaryCommand)) {
                 sendMessage(message.channel, "That command cannot be used in DMs")
             }

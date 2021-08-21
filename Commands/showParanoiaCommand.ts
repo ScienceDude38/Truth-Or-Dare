@@ -4,7 +4,7 @@ import { ChannelSetting, ChannelSettings, defaultSettings, handler, rRatedSettin
 
 const Aliases = ["sp"]
 
-async function Command(args: string[], message: Message, channelSettings: ChannelSettings, prefix: string) {
+async function Command(args: string[], message: Message, channelSettings: ChannelSettings, premium: boolean, prefix: string) {
     let { guild, channel } = message
     let member = await guild!.members.fetch(message.author.id)
     let roles = await Promise.all(member.roles.cache.map(role => guild!.roles.fetch(role.id)))
