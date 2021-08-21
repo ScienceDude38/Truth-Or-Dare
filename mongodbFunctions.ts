@@ -396,6 +396,36 @@ class MongoHandler {
             })
         })
     }
+    async getCooldown(guildID: string): Promise<number> {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+
+        this.handler.emit('message', {
+            operation: "getCooldown",
+            args: [guildID],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data: any) => {
+                res(data)
+            })
+        })
+    }
+    async setCooldown(guildID: string, value: number) {
+        let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
+
+        this.handler.emit('message', {
+            operation: "setCooldown",
+            args: [guildID, value],
+            operationID
+        })
+
+        return await new Promise((res, rej) => {
+            this.handler.once(operationID, (data: any) => {
+                res(data)
+            })
+        })
+    }
 }
 
 export {MongoHandler}

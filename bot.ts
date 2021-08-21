@@ -325,7 +325,7 @@ async function processCommand(message: Message, channelSettings: ChannelSettings
     }
     else {
         if (!dm) {
-            if (Date.now() - channelTime[message.channel.id] < 3000) {
+            if (Date.now() - channelTime[message.channel.id] < (premium ? await handler.getCooldown(message.guild!.id) || 3000 : 3000)) {
                 sendMessage(message.channel, "You're sending commands too fast, wait a few seconds before trying another");
             }
             else if (!channelSettings["muted?"]) {

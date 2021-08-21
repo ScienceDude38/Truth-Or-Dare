@@ -43,7 +43,8 @@ var collectionNames = [
     "questions",
     "customQuestions",
     "questionOverrides",
-    "premiumServers"
+    "premiumServers",
+    "cooldowns"
 ]
 
 var collections: Record<string, Collection> = {}
@@ -198,6 +199,14 @@ const functions: Record<string, Function> = {
         } else {
             collection.deleteOne({ guildID })
         }
+    },
+    getCooldown: async (guildID: string) => {
+        let collection = collections.cooldowns
+        return (await collection.findOne({ guildID })).data
+    },
+    setCooldown: async (guildID: string, value: number) => {
+        let collection = collections.cooldowns
+        return collection.findOneAndReplace({ guildID }, { guildID, data: value }, { "upsert": true })
     }
 }
 
