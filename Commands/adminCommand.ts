@@ -120,6 +120,19 @@ async function SlashCommand(interaction: CommandInteraction, channelSettings: Ch
             guild: guild!
         })
         interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
+    } else if (command === "cooldown") {
+        await client.application!.commands.permissions.add({
+            command: commandIDs["cooldown"],
+            permissions: [
+                {
+                    id: role!.id,
+                    type: "ROLE",
+                    permission: options.getSubcommand() === "set"
+                }
+            ],
+            guild: guild!
+        })
+        interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
     }
 }
 
@@ -146,7 +159,8 @@ const Meta = {
                         { name: "enable/disable", value: "enable/disable" },
                         { name: "mute/unmute", value: "mute/unmute" },
                         { name: "showparanoia", value: "showparanoia" },
-                        { name: "add/remove/readd", value: "add/remove/readd" }
+                        { name: "add/remove/readd", value: "add/remove/readd" },
+                        { name: "cooldown", value: "cooldown" }
                     ],
                     required: true
                 }
@@ -171,7 +185,8 @@ const Meta = {
                         { name: "enable/disable", value: "enable/disable" },
                         { name: "mute/unmute", value: "mute/unmute" },
                         { name: "showparanoia", value: "showparanoia" },
-                        { name: "add/remove/readd", value: "add/remove/readd" }
+                        { name: "add/remove/readd", value: "add/remove/readd" },
+                        { name: "cooldown", value: "cooldown" }
                     ],
                     required: true
                 }

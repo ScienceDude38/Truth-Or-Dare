@@ -396,12 +396,12 @@ class MongoHandler {
             })
         })
     }
-    async getCooldown(guildID: string): Promise<number> {
+    async getCooldown(channelID: string): Promise<number> {
         let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
 
         this.handler.emit('message', {
             operation: "getCooldown",
-            args: [guildID],
+            args: [channelID],
             operationID
         })
 
@@ -411,12 +411,12 @@ class MongoHandler {
             })
         })
     }
-    async setCooldown(guildID: string, value: number) {
+    async setCooldown(channelID: string, value: number) {
         let operationID = Date.now().toString() + Math.random().toString(10).substr(2, 9)
 
         this.handler.emit('message', {
             operation: "setCooldown",
-            args: [guildID, value],
+            args: [channelID, value],
             operationID
         })
 

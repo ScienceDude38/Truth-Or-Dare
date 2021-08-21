@@ -200,13 +200,13 @@ const functions: Record<string, Function> = {
             collection.deleteOne({ guildID })
         }
     },
-    getCooldown: async (guildID: string) => {
+    getCooldown: async (channelID: string) => {
         let collection = collections.cooldowns
-        return (await collection.findOne({ guildID })).data
+        return (await collection.findOne({ channelID })).data
     },
-    setCooldown: async (guildID: string, value: number) => {
+    setCooldown: async (channelID: string, value: number) => {
         let collection = collections.cooldowns
-        return collection.findOneAndReplace({ guildID }, { guildID, data: value }, { "upsert": true })
+        return collection.findOneAndReplace({ channelID }, { channelID, data: value }, { "upsert": true })
     }
 }
 
