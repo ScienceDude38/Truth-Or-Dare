@@ -80,7 +80,7 @@ async function SlashCommand(interaction: CommandInteraction) {
         })
     }
 
-    interaction.editReply(options.data.some(o => o.name === 'set') ? "Role set as an admin role" : "Role removed as an admin role")
+    interaction.editReply(options.getSubcommand() === "set" ? "Role set as an admin role" : "Role removed as an admin role")
 }
 
 const Meta = {
