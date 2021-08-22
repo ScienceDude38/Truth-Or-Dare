@@ -350,7 +350,11 @@ function sendMessage(channel: TextBasedChannels, messageContent: any) {
     if (messageContent instanceof MessageEmbed) {
         channel.send({
             embeds: [messageContent]
-        }).catch(() => { console.log("Missing permissions") })
+        }).catch(() => {
+            channel.send("Response failed to send, check to ensure that the bot is able to send embeds in this channel").catch(() => {
+                console.log("Missing permissions");
+            })
+        });
     } else {
         channel.send(messageContent).catch(() => { console.log("Missing permissions"); });
     }
