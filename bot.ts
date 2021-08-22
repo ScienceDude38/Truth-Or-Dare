@@ -267,7 +267,7 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    const { guild, channel } = message;
+    const { guild, channelId } = message;
     if (guild) {
         let prefix = await handler.getPrefix(guild.id);
 
@@ -277,9 +277,9 @@ client.on('messageCreate', async (message) => {
         }
 
         if (message.content.startsWith(prefix)) {
-            let channelSettings = await handler.getChannelSettings(channel.id);
+            let channelSettings = await handler.getChannelSettings(channelId);
 
-            if ((!channelSettings || Object.keys(channelSettings).length === 0) && channel && guild) {
+            if ((!channelSettings || Object.keys(channelSettings).length === 0) && channelId) {
                 console.log("Unindexed channel")
 
                 channelSettings = defaultSettings()
@@ -288,12 +288,12 @@ client.on('messageCreate', async (message) => {
                 if (!Array.isArray(oldServerChannels)) {
                     oldServerChannels = []
                 }
-                let serverChannels = [...oldServerChannels, channel.id]
-                handler.setChannelSettings(channel.id, channelSettings);
+                let serverChannels = [...oldServerChannels, channelId]
+                handler.setChannelSettings(channelId, channelSettings);
                 handler.setServerChannels(guild.id, serverChannels)
             }
 
-            let premium = await handler.getPremiumServer(guild!.id)
+            let premium = await handler.getPremiumServer(guild.id)
             processCommand(message, channelSettings!, prefix, false, premium);
 
             if (Math.random() < 0.007) {
@@ -302,7 +302,7 @@ client.on('messageCreate', async (message) => {
                     .setTitle("Links")
                     .addField('\u200B', 'Enjoying the bot? Make sure to [give feedback](https://truthordarebot.xyz/feedback) and [suggest questions](https://truthordarebot.xyz/question_submit).')
                     .setTimestamp();
-                sendMessage(channel, {
+                sendMessage(message.channel, {
                     embeds: [linkEmbed]
                 });
             }
@@ -325,13 +325,13 @@ async function processCommand(message: Message, channelSettings: ChannelSettings
     }
     else {
         if (!dm) {
-            if (Date.now() - channelTime[message.channel.id] < (premium ? await handler.getCooldown(message.channel.id) || 0 : 3000)) {
+            if (Date.now() - channelTime[message.channelId] < (premium ? await handler.getCooldown(message.channelId) || 0 : 3000)) {
                 sendMessage(message.channel, "You're sending commands too fast, wait a few seconds before trying another");
             }
             else if (!channelSettings["muted?"]) {
                 if (client.commands.has(primaryCommand) && primaryCommand !== "ans") {
                     client.commands.get(primaryCommand)!(args, message, channelSettings, prefix);
-                    channelTime[message.channel.id] = Date.now();
+                    channelTime[message.channelId] = Date.now();
                 }
             } else if (primaryCommand === "unmute" || primaryCommand === "um") {
                 client.commands.get(primaryCommand)!(args, message, channelSettings, premium, prefix)

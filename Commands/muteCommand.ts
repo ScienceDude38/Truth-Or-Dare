@@ -5,13 +5,13 @@ import { sendMessage, handler, ChannelSetting, ChannelSettings, rRatedSettings, 
 const Aliases = ["m"]
 
 async function Command(args: string[], message: Message, channelSettings: ChannelSettings, premium: boolean, prefix: string) {
-    let { guild } = message
+    let { guild, channel, channelId } = message
     let member = await guild!.members.fetch(message.author.id)
     let roles = await Promise.all(member.roles.cache.map(role => guild!.roles.fetch(role.id)))
     let admin = member.permissions.has("ADMINISTRATOR")
         || roles.some(role => role?.permissions.has("ADMINISTRATOR"))
     if (!admin) {
-        sendMessage(message.channel, "You must be an administrator to use this command");
+        sendMessage(channel, "You must be an administrator to use this command");
     }
     else {
         if (args.includes('server') && args.length === 1) {
@@ -23,16 +23,16 @@ async function Command(args: string[], message: Message, channelSettings: Channe
                     handler.setChannelSettings(channel, cs)
                 }
             }
-            sendMessage(message.channel, `Muted serverwide. Use ${prefix}unmute to unmute`);
+            sendMessage(channel, `Muted serverwide. Use ${prefix}unmute to unmute`);
         }
         else if (args.length === 0) {
             if (channelSettings["muted?"] === true) {
-                sendMessage(message.channel, "I am already muted");
+                sendMessage(channel, "I am already muted");
             }
             else {
                 channelSettings["muted?"] = true;
-                handler.setChannelSettings(message.channel.id, channelSettings);
-                sendMessage(message.channel, `Muted in this channel. Use ${prefix}unmute to unmute`);
+                handler.setChannelSettings(channelId, channelSettings);
+                sendMessage(channel, `Muted in this channel. Use ${prefix}unmute to unmute`);
             }
         }
     }

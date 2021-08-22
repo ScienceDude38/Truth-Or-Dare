@@ -238,7 +238,7 @@ function sendQuestionToUser(user: User, question: Question, message: Message, gu
 
     user.send({embeds: [paranoiaEmbed]})
         .then(() => {
-            addUser(user.id, message.guild!.id, message.channel.id, question.text)
+            addUser(user.id, message.guild!.id, message.channelId, question.text)
             sendMessage(message.channel, "Paranoia question sent")
         })
         .catch((err) => {

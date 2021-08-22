@@ -5,7 +5,7 @@ import { ChannelSetting, ChannelSettings, defaultSettings, handler, rRatedSettin
 const Aliases = ["sp"]
 
 async function Command(args: string[], message: Message, channelSettings: ChannelSettings, premium: boolean, prefix: string) {
-    let { guild, channel } = message
+    let { guild, channel, channelId } = message
     let member = await guild!.members.fetch(message.author.id)
     let roles = await Promise.all(member.roles.cache.map(role => guild!.roles.fetch(role.id)))
     let admin = member.permissions.has("ADMINISTRATOR")
@@ -71,7 +71,7 @@ async function Command(args: string[], message: Message, channelSettings: Channe
 
                 if (value) {
                     channelSettings["show paranoia"] = value
-                    handler.setChannelSettings(channel.id, channelSettings)
+                    handler.setChannelSettings(channelId, channelSettings)
                 }
             }
         }

@@ -8,7 +8,7 @@ type ValidChannelSetting = notShowParanoia<ChannelSetting>
 const Aliases = ["en"]
 
 async function Command(args: string[], message: Message, channelSettings: ChannelSettings) {
-    let {guild, channel} = message
+    let {guild, channel, channelId} = message
 
     let member = await guild!.members.fetch(message.author.id)
     let roles = await Promise.all(member.roles.cache.map(role => guild!.roles.fetch(role.id)))
@@ -79,7 +79,7 @@ async function Command(args: string[], message: Message, channelSettings: Channe
                     for (let setting of toBeEnabled) {
                         channelSettings[setting] = true
                     }
-                    await handler.setChannelSettings(channel.id, channelSettings)
+                    await handler.setChannelSettings(channelId, channelSettings)
                 }
                 let enabledString = joinToString(toBeEnabled);
                 sendMessage(channel, `${enabledString} enabled ${(args.includes("server")) ? "serverwide" : "in this channel"}`);
